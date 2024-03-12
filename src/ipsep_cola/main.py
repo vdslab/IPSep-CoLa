@@ -150,7 +150,7 @@ def expand_block(b, c_tilde, B: list[Block], offset):
     sc = min([lm[c] for c in ps])
     AC.remove(sc)
 
-    for v in connected(right(c_tilde, AC)):
+    for v in connected(right(c_tilde), AC):
         offset[v] += violation(c_tilde)
     B[b].active = AC.union(c_tilde)
     B[b].posn = sum([x[j] - offset[j] for j in B[b].vars]) / B[b].nvars
@@ -211,8 +211,13 @@ def split_blocks(x, B: list[Block], offset, block):
     return no_split
 
 
-def connected():
-    pass
+def connected(s, AC):
+    v = []
+    for a, b, c in AC:
+        if b == s:
+            v.append(a)
+
+    return v
 
 
 def comp_path(left, right, AC):
