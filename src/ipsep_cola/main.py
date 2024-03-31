@@ -196,9 +196,14 @@ def comp_dfdv(v, AC, u):
     global x
     global lm
 
-    dfdv = posn(v) - x[v]
+    dfdv = posn(v) - x[v][0]
     for c in AC:
-        if not (v == left(c) and u != left(c)):
+        if not (v == left(c) and u != right(c)):
+            continue
+        lm[c] = comp_dfdv(right(c), AC, v)
+        dfdv += lm[c]
+    for c in AC:
+        if not (v == right(c) and u != left(c)):
             continue
         lm[c] = -comp_dfdv(left(c), AC, v)
         dfdv -= lm[c]
