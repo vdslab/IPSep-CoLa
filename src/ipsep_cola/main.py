@@ -1,7 +1,7 @@
 import numpy as np
 
 n = 19
-x: list[list] = [[0, 0] for _ in range(n)]
+x = np.random.rand(n, 1) * 20
 # from, to, cost
 C = [
     [3, 2, 1],
@@ -43,71 +43,97 @@ graph = [[] for _ in range(n)]
 for l, r, c in C:
     graph[l - 1].append((r - 1, c))
     graph[r - 1].append((l - 1, c))
+lm = dict()
+blocks = [i for i in range(n)]
+offset = [0 for _ in range(n)]
 
 
 class Block:
-    def __init__(self, posn, nvars):
+    def __init__(self, node_id, posn):
         self.posn = posn
-        self.nvars = nvars
+        self.nvars = 1
         self.active = set()
         self.vars = set()
+        self.vars.add(node_id)
+
+    def __str__(self) -> str:
+        return f"Block(posn={self.posn}, nvars={self.nvars}, active={self.active}, vars={self.vars})"
 
 
-B = [Block(0, 0) for _ in range(n)]
+B = [Block(i, x[i][0]) for i in range(n)]
 
 
-def left(c):
-    return C[c][0] - 1
+def left(ci):
+    return C[ci][0] - 1
 
 
-def right(c):
-    return C[c][1] - 1
+def right(ci):
+    return C[ci][1] - 1
 
 
-def gap(c):
-    return C[c][2]
+def gap(ci):
+    return C[ci][2]
 
 
 def posn(vi):
-    pass
+    global blocks
+    global offset
+    global B
+
+    return B[blocks[vi]].posn + offset[vi]
 
 
-def violation(c):
-    return posn(left(c)) + gap(c) - posn(right(c))
-
-
-lm = dict()
+def violation(ci):
+    vio = int(posn(left(ci)) + gap(ci) - posn(right(ci)))
+    return vio
 
 
 def solve_QPSC(A, b, C):
     global x
+    global B
+    global offset
+    global blocks
+    print(x)
+
     while True:
         g = A @ x + b
-        s = g.T @ g / (g.T @ A @ g)
+        s = (g.T @ g) / (g.T @ A @ g)
         x_hat = np.copy(x)
-        x = x_hat - s @ g
-        no_split = split_blocks(x)
+        x = x_hat - s[0][0] * g
+        no_split = split_blocks()
         x_bar = project(C)
         d = x_bar - x_hat
         alpha = max(g.T @ d / (d.T @ A @ d), 1)
         x = x_hat + alpha * d
 
         norm = np.linalg.norm(x - x_hat, ord=2)
+        print(norm)
         if norm < 1e-6 and no_split:
             break
 
     return x
 
 
-def project(C, block, B: list[Block], offset):
+def project(C):
     global x
-    c = max([violation(c) for c in C])
+    global blocks
+    global offset
+    global B
+    block = blocks
+
+    print("project")
+    c = max([violation(ci) for ci in range(len(C))])
+    print("violation c", violation(c))
+
     while violation(c) > 0:
+        print("while")
         if block[left(c)] != block[right(c)]:
+            print("merge")
             merge_blocks(block[left(c)], block[right(c)], c)
         else:
+            print("Expand")
             expand_block(block[left(c)], c)
-        c = max([violation(c) for c in C])
+        c = max([violation(ci) for ci in range(len(C))])
 
     n = len(block)
     for i in range(n):
@@ -116,7 +142,12 @@ def project(C, block, B: list[Block], offset):
     return x
 
 
-def merge_blocks(L, R, c, offset, block, B: list[Block]):
+def merge_blocks(L, R, c):
+    global blocks
+    global offset
+    global B
+
+    block = blocks
     d = offset[L] + gap(c) - offset[R]
     B[L].posn = (B[L].posn * B[L].nvars + (B[R].posn - d) * B[R].nvars) / (
         B[L].nvars + B[R].nvars
@@ -132,9 +163,11 @@ def merge_blocks(L, R, c, offset, block, B: list[Block]):
     B[R].nvars = 0
 
 
-def expand_block(b, c_tilde, B: list[Block], offset):
+def expand_block(b, c_tilde):
     global lm
     global x
+    global offset
+    global B
 
     for c in B[b].active:
         lm[c] = 0
@@ -147,12 +180,15 @@ def expand_block(b, c_tilde, B: list[Block], offset):
             if left(c) == v[j] and right(c) == v[j + 1]:
                 ps.add(j)
 
-    sc = min([lm[c] for c in ps])
-    AC.remove(sc)
+    exist_ps = [lm[c] for c in ps if lm.get(c) is not None]
+    if len(exist_ps) != 0:
+        sc = min([lm[c] for c in exist_ps])
+        AC.remove(sc)
 
     for v in connected(right(c_tilde), AC):
         offset[v] += violation(c_tilde)
-    B[b].active = AC.union(c_tilde)
+    AC.add(c_tilde)
+    B[b].active = AC
     B[b].posn = sum([x[j] - offset[j] for j in B[b].vars]) / B[b].nvars
 
 
@@ -170,15 +206,23 @@ def comp_dfdv(v, AC, u):
     return dfdv
 
 
-def split_blocks(x, B: list[Block], offset, block):
+def split_blocks():
     global lm
+    global x
+    global offset
+    global blocks
+    global B
+    block = blocks
+
+    print("split")
 
     no_split = True
     for i in range(len(B)):
         if B[i].nvars == 0:
             continue
 
-        B[i].posn = sum([x[j] - offset[j] for j in B[i].vars]) / B[i].nvars
+        B[i].posn = sum([x[j][0] - offset[j] for j in B[i].vars]) / B[i].nvars
+
         AC: set = B[i].active
         for c in AC:
             lm[c] = 0
@@ -187,7 +231,15 @@ def split_blocks(x, B: list[Block], offset, block):
         B[i].vars.add(v)
 
         comp_dfdv(v, AC, None)
-        sc = min([lm[c] for c in AC])
+
+        if len(AC) == 0:
+            continue
+        lmc = [(lm[c], c) for c in AC]
+        lmc_min = min([lm[c] for c in AC])
+        sc = lmc[0][1]
+        for lmcv, c in lmc:
+            if lmcv == lmc_min:
+                sc = c
         if lm[sc] >= 0:
             break
         no_split = False
@@ -202,8 +254,15 @@ def split_blocks(x, B: list[Block], offset, block):
         B[s].nvars = len(B[s].vars)
         B[i].nvars = len(B[i].vars)
 
-        B[s].posn = sum([x[j] - offset[j] for j in B[s].vars]) / B[s].nvars
-        B[i].posn = sum([x[j] - offset[j] for j in B[i].vars]) / B[i].nvars
+        if B[s].nvars == 0:
+            B[s].posn = 0
+        else:
+            B[s].posn = sum([x[j] - offset[j] for j in B[s].vars]) / B[s].nvars
+
+        if B[i].nvars == 0:
+            B[i].posn = 0
+        else:
+            B[i].posn = sum([x[j] - offset[j] for j in B[i].vars]) / B[i].nvars
 
         B[i].active = {c for c in AC if left(c) in B[s].vars and right(c) in B[s].vars}
         B[s].active = AC.difference(B[i].active)
@@ -213,7 +272,8 @@ def split_blocks(x, B: list[Block], offset, block):
 
 def connected(s, AC):
     v = []
-    for a, b, c in AC:
+    for ci in AC:
+        a, b, c = C[ci]
         if b == s:
             v.append(a)
 
@@ -229,7 +289,7 @@ def comp_path(left, right, AC):
     while len(stack) > 0:
         u = stack.pop()
         for vv, cost in graph[u]:
-            if [u, vv, cost] not in AC:
+            if u not in AC or v not in AC:
                 continue
             if vv in v:
                 continue
@@ -237,3 +297,15 @@ def comp_path(left, right, AC):
             stack.append(vv)
 
     return list(v)
+
+
+if __name__ == "__main__":
+    A = np.zeros((n, n))
+    b = np.random.rand(n, 1)
+    for i in range(n):
+        for j, cost in graph[i]:
+            A[i][i] += cost
+            A[i][j] -= cost
+
+    solve_QPSC(A, b, C)
+    print(x)
