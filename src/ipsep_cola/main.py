@@ -84,8 +84,7 @@ def posn(vi):
 
 
 def violation(ci):
-    vio = int(posn(left(ci)) + gap(ci) - posn(right(ci)))
-    return vio
+    return posn(left(ci)) + gap(ci) - posn(right(ci))
 
 
 def solve_QPSC(A, b, C):
@@ -122,18 +121,18 @@ def project(C):
     block = blocks
 
     print("project")
-    c = max([violation(ci) for ci in range(len(C))])
-    print("violation c", violation(c))
 
-    while violation(c) > 0:
-        print("while")
+    c = np.argmax([violation(ci) for ci in range(len(C))])
+
+    while violation(c) >= 0:
+        print("violation c", violation(c), c)
         if block[left(c)] != block[right(c)]:
             print("merge")
             merge_blocks(block[left(c)], block[right(c)], c)
         else:
             print("Expand")
             expand_block(block[left(c)], c)
-        c = max([violation(ci) for ci in range(len(C))])
+        c = np.argmax([violation(ci) for ci in range(len(C))])
 
     n = len(block)
     for i in range(n):
@@ -178,18 +177,19 @@ def expand_block(b, c_tilde):
     for c in AC:
         for j in range(len(v) - 1):
             if left(c) == v[j] and right(c) == v[j + 1]:
-                ps.add(j)
+                ps.add(c)
+                break
 
-    exist_ps = [lm[c] for c in ps if lm.get(c) is not None]
-    if len(exist_ps) != 0:
-        sc = min([lm[c] for c in exist_ps])
-        AC.remove(sc)
+    if len(ps) != 0:
+        ps = list(ps)
+        sc = ps[np.argmin([lm[c] for c in ps])]
+        AC.discard(sc)
 
     for v in connected(right(c_tilde), AC):
         offset[v] += violation(c_tilde)
     AC.add(c_tilde)
     B[b].active = AC
-    B[b].posn = sum([x[j] - offset[j] for j in B[b].vars]) / B[b].nvars
+    B[b].posn = sum([x[j][0] - offset[j] for j in B[b].vars]) / B[b].nvars
 
 
 def comp_dfdv(v, AC, u):
@@ -234,12 +234,7 @@ def split_blocks():
 
         if len(AC) == 0:
             continue
-        lmc = [(lm[c], c) for c in AC]
-        lmc_min = min([lm[c] for c in AC])
-        sc = lmc[0][1]
-        for lmcv, c in lmc:
-            if lmcv == lmc_min:
-                sc = c
+        sc = np.argmin([lm[c] for c in AC])
         if lm[sc] >= 0:
             break
         no_split = False
@@ -257,12 +252,12 @@ def split_blocks():
         if B[s].nvars == 0:
             B[s].posn = 0
         else:
-            B[s].posn = sum([x[j] - offset[j] for j in B[s].vars]) / B[s].nvars
+            B[s].posn = sum([x[j][0] - offset[j] for j in B[s].vars]) / B[s].nvars
 
         if B[i].nvars == 0:
             B[i].posn = 0
         else:
-            B[i].posn = sum([x[j] - offset[j] for j in B[i].vars]) / B[i].nvars
+            B[i].posn = sum([x[j][0] - offset[j] for j in B[i].vars]) / B[i].nvars
 
         B[i].active = {c for c in AC if left(c) in B[s].vars and right(c) in B[s].vars}
         B[s].active = AC.difference(B[i].active)
