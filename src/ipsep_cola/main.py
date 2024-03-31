@@ -197,6 +197,9 @@ def comp_dfdv(v, AC, u):
     global lm
 
     dfdv = posn(v) - x[v][0]
+    if v == u:
+        return dfdv
+
     for c in AC:
         if not (v == left(c) and u != right(c)):
             continue
@@ -271,16 +274,19 @@ def split_blocks():
 
 
 def connected(s, AC):
-    v = []
+    v = set()
     for ci in AC:
         a, b, c = C[ci]
         if b == s:
-            v.append(a)
+            v.add(a)
+        if a == s:
+            v.add(b)
 
-    return v
+    return list(v)
 
 
 def comp_path(left, right, AC):
+    global graph
     v = set()
     v.add(left)
     v.add(right)
