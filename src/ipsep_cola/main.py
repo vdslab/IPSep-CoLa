@@ -13,68 +13,12 @@ from majorization.main import (
     z_laplacian,
 )
 
-#
-GRAPH_BASE = [
-    [3, 2, 1],
-    [5, 1, 1],
-    [5, 3, 1],
-    [5, 4, 1],
-    [5, 7, 1],
-    [5, 6, 1],
-    [5, 9, 1],
-    [7, 6, 1],
-    [7, 10, 1],
-    [9, 8, 1],
-    [9, 6, 1],
-    [9, 5, 1],
-    [9, 7, 1],
-    [9, 10, 1],
-    [9, 11, 1],
-    [10, 13, 1],
-    [11, 12, 1],
-    [12, 11, 1],
-    [13, 10, 1],
-    [13, 15, 1],
-    [14, 12, 1],
-    [14, 15, 1],
-    [14, 16, 1],
-    [15, 13, 1],
-    [15, 16, 1],
-    [16, 15, 1],
-    [16, 17, 1],
-    [17, 16, 1],
-    [17, 18, 1],
-    [17, 19, 1],
-    [18, 19, 1],
-    [19, 18, 1],
-]
 n = 19
 x = [[0] for _ in range(n)]
-graph = [[] for _ in range(n)]
-for l, r, c in GRAPH_BASE:
-    graph[l - 1].append((r - 1, c))
-    graph[r - 1].append((l - 1, c))
-
 # from, to, cost
-C = [
-    [3, 2, 1],
-    [3, 4, 1],
-    [5, 1, 1],
-    [5, 3, 1],
-    [5, 4, 1],
-    [5, 7, 1],
-    [5, 6, 1],
-    [5, 9, 1],
-    [7, 6, 1],
-    [7, 10, 1],
-    [9, 8, 1],
-    [9, 6, 1],
-]
+C = [[] for _ in range(n)]
 
 c_graph = [[] for _ in range(n)]
-for l, r, c in C:
-    c_graph[l - 1].append((r - 1, c))
-    c_graph[r - 1].append((l - 1, c))
 lm = dict()
 blocks = [i for i in range(n)]
 offset = [0 for _ in range(n)]
@@ -124,7 +68,8 @@ def solve_QPSC(A, b, C):
     global B
     global offset
     global blocks
-    print(x)
+
+    print("solve_QPSC")
 
     while True:
         g = A @ x + b
@@ -138,7 +83,6 @@ def solve_QPSC(A, b, C):
         x = x_hat + alpha * d
 
         norm = np.linalg.norm(x - x_hat, ord=2)
-        print(norm)
         if norm < 1e-6 and no_split:
             break
 
@@ -152,21 +96,12 @@ def project(C):
     global B
     block = blocks
 
-    print("project")
-
     c = np.argmax([violation(ci) for ci in range(len(C))])
 
     while violation(c) > 0:
-        print(offset)
-        print("violation c", violation(c), c)
-        print("block")
-        print(left(c), right(c), block[left(c)], block[right(c)])
         if block[left(c)] != block[right(c)]:
-            print("merge")
             merge_blocks(block[left(c)], block[right(c)], c)
         else:
-            print("Expand")
-            print(c, left(c), block[left(c)])
             expand_block(block[left(c)], c)
         c = np.argmax([violation(ci) for ci in range(len(C))])
 
@@ -258,8 +193,6 @@ def split_blocks():
     global blocks
     global B
     block = blocks
-
-    print("split")
 
     no_split = True
     for i in range(len(B)):
@@ -385,7 +318,7 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
     new_stress = 0.5 * now_stress
 
     def delta_stress(now, new):
-        return (now - new) / now
+        return abs(now - new) / now
 
     while True:
         Lz = z_laplacian(weights, dist, Z)
@@ -393,16 +326,16 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
             # Ax = b
             Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
 
-        new_stress = stress(Z, dist, weights)
-        print(f"{now_stress=} -> {new_stress=}")
-        print(delta_stress(now_stress, new_stress))
-
         # ipsep_cola
         b = (Lz @ Z[:, 1]).reshape(-1, 1)
         A = Lw
         delta_x = solve_QPSC(A, b, C)
         Z[:, 1:2] = delta_x.flatten()[:, None]
         Z[0] = [0 for _ in range(dim)]
+
+        new_stress = stress(Z, dist, weights)
+        print(f"{now_stress=} -> {new_stress=}")
+        print(delta_stress(now_stress, new_stress))
 
         if delta_stress(now_stress, new_stress) < eps:
             break
@@ -419,6 +352,14 @@ if __name__ == "__main__":
     n = len(nodes)
 
     links = [[d["source"] + 1, d["target"] + 1] for d in data["links"]]
+    constraints = data["constraints"]
+    C = []
+    for c in constraints:
+        C.append([c["left"],c["right"],c["gap"]])
+    
+    c_graph = [[] for _ in range(n)]
+    for l,r,g in C:
+        c_graph[l-1].append((r-1,g))
 
     Z = stress_majorization(nodes, links)
 
@@ -429,19 +370,7 @@ if __name__ == "__main__":
         for link in links:
             G.add_edge(*link)
         position = {i + 1: Z[i] for i in range(n)}
-        nx.draw(G, pos=position)
+        nx.draw(G, pos=position, node_size=500)
         plt.show()
 
     view()
-
-# if __name__ == "__main__":
-#     A = np.zeros((n, n))
-#     b = np.random.rand(n, 1)
-#     for i in range(n):
-#         for j, cost in c_graph[i]:
-#             A[i][i] += cost
-#             A[i][j] -= cost
-
-#     # 各イテレーションで以下を解くらしい
-#     solve_QPSC(A, b, C)
-#     print(x)
