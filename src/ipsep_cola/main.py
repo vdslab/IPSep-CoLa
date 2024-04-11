@@ -1,27 +1,18 @@
+import datetime
 import json
+import os
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from networkx import floyd_warshall_numpy
-from scipy.sparse.linalg import cg
-
 from majorization.main import (
     stress,
     weight_laplacian,
     weights_of_normalization_constant,
     z_laplacian,
 )
-
-n = 19
-x = [[0] for _ in range(n)]
-# from, to, cost
-C = [[] for _ in range(n)]
-
-c_graph = [[] for _ in range(n)]
-lm = dict()
-blocks = [i for i in range(n)]
-offset = [0 for _ in range(n)]
+from networkx import floyd_warshall_numpy
+from scipy.sparse.linalg import cg
 
 
 class Block:
@@ -36,7 +27,13 @@ class Block:
         return f"Block(posn={self.posn}, nvars={self.nvars}, active={self.active}, vars={self.vars})"
 
 
-B = [Block(i, x[i][0]) for i in range(n)]
+C = [[] for _ in range(1)]
+c_graph = [[] for _ in range(1)]
+lm = dict()
+blocks = [i for i in range(1)]
+offset = [0 for _ in range(1)]
+x = [[0] for _ in range(1)]
+B = [Block(i, x[i][0]) for i in range(1)]
 
 
 def left(ci):
@@ -95,6 +92,9 @@ def project(C):
     global offset
     global B
     block = blocks
+
+    if len(C) == 0:
+        return x
 
     c = np.argmax([violation(ci) for ci in range(len(C))])
 
@@ -244,14 +244,21 @@ def split_blocks():
 
 
 def connected(s, AC):
-    global B
-    v: set = B[s].vars
-    for ci in AC:
-        a, b, c = C[ci]
-        if b == s:
-            v.add(a)
-        if a == s:
-            v.add(b)
+    global c_graph
+
+    v = set()
+    v.add(s)
+    # left to right path nodes
+    stack = [s]
+    while len(stack) > 0:
+        u = stack.pop()
+        for vv, cost in c_graph[u]:
+            if u not in AC or v not in AC:
+                continue
+            if vv in v:
+                continue
+            v.add(vv)
+            stack.append(vv)
 
     return v
 
@@ -299,6 +306,7 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
     dist = floyd_warshall_numpy(G)
 
     # 座標の初期値はランダム
+    np.random.seed(0)
     Z = np.random.rand(n, dim)
     if initZ is not None:
         Z = initZ
@@ -312,26 +320,34 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
 
     Lw = weight_laplacian(weights)
 
+    def update_ipset_cola():
+        # ipsep_cola
+        Lz = z_laplacian(weights, dist, Z)
+        b = (Lz @ Z[:, 1]).reshape(-1, 1)
+        A = Lw
+        delta_x = solve_QPSC(A, b, C)
+        Z[:, 1:2] = delta_x.flatten()[:, None]
+        Z[0] = [0 for _ in range(dim)]
+
+    update_ipset_cola()
+
     # 終了する閾値
     eps = 0.000_01
     now_stress = stress(Z, dist, weights)
     new_stress = 0.5 * now_stress
 
     def delta_stress(now, new):
-        return abs(now - new) / now
+        return (now - new) / now
 
     while True:
         Lz = z_laplacian(weights, dist, Z)
-        for a in range(dim):
-            # Ax = b
-            Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
 
-        # ipsep_cola
-        b = (Lz @ Z[:, 1]).reshape(-1, 1)
-        A = Lw
-        delta_x = solve_QPSC(A, b, C)
-        Z[:, 1:2] = delta_x.flatten()[:, None]
-        Z[0] = [0 for _ in range(dim)]
+        # for a in range(dim):
+        #     # Ax = b
+        #     Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
+        Z[1:, 0] = cg(Lw[1:, 1:], (Lz @ Z[:, 0])[1:])[0]
+
+        update_ipset_cola()
 
         new_stress = stress(Z, dist, weights)
         print(f"{now_stress=} -> {new_stress=}")
@@ -354,12 +370,12 @@ if __name__ == "__main__":
     links = [[d["source"] + 1, d["target"] + 1] for d in data["links"]]
     constraints = data["constraints"]
     C = []
-    for c in constraints:
-        C.append([c["left"],c["right"],c["gap"]])
-    
+    # for c in constraints:
+    #     C.append([c["right"], c["left"], 1])
+
     c_graph = [[] for _ in range(n)]
-    for l,r,g in C:
-        c_graph[l-1].append((r-1,g))
+    for l, r, g in C:
+        c_graph[l - 1].append((r - 1, g))
 
     Z = stress_majorization(nodes, links)
 
@@ -370,7 +386,14 @@ if __name__ == "__main__":
         for link in links:
             G.add_edge(*link)
         position = {i + 1: Z[i] for i in range(n)}
-        nx.draw(G, pos=position, node_size=500)
+
+        today = datetime.date.today()
+        now = datetime.datetime.now().time()
+        os.makedirs(f"result/{today}", exist_ok=True)
+
+        plt.figure(figsize=(10, 10))
+        nx.draw(G, pos=position, node_size=300, labels={i + 1: i for i in range(n)})
+        plt.savefig(f"result/{today}/{now}.png")
         plt.show()
 
     view()
