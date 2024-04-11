@@ -1,3 +1,9 @@
 # ipsep-cola
 
-Describe your project here.
+use rye
+
+- https://rye-up.com/guide/installation/
+
+```bash
+rye sync
+```

@@ -376,6 +376,8 @@ if __name__ == "__main__":
     c_graph = [[] for _ in range(n)]
     for l, r, g in C:
         c_graph[l - 1].append((r - 1, g))
+    for l, r, g in C:
+        c_graph[l - 1].append((r - 1, g))
 
     Z = stress_majorization(nodes, links)
 

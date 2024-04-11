@@ -111,7 +111,7 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
     Lw = weight_laplacian(weights)
 
     # 終了する閾値
-    eps = 0.000_01
+    eps = 0.0_01
     now_stress = stress(Z, dist, weights)
     new_stress = 0.5 * now_stress
 
