@@ -88,7 +88,7 @@ def project(C, constraints: Constraints, node_blocks: NodeBlocks):
         c_left = constraints.left_index(c)
         c_right = constraints.right_index(c)
         if block[c_left] != block[c_right]:
-            merge_blocks(block[c_left], block[c_right], c)
+            merge_blocks(block[c_left], block[c_right], c, constraints, node_blocks)
         else:
             expand_block(block[c_left], c, constraints)
         c = np.argmax([violation(ci) for ci in range(len(C))])
@@ -101,13 +101,12 @@ def project(C, constraints: Constraints, node_blocks: NodeBlocks):
     return x
 
 
-def merge_blocks(L, R, c):
-    global blocks
-    global offset
-    global B
+def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
+    block = node_blocks.blocks
+    offset = node_blocks.offset
+    B = node_blocks.B
 
-    block = blocks
-    d = offset[L] + gap(c) - offset[R]
+    d = offset[L] + constraints.gap(c) - offset[R]
     B[L].posn = (B[L].posn * B[L].nvars + (B[R].posn - d) * B[R].nvars) / (
         B[L].nvars + B[R].nvars
     )
@@ -120,6 +119,10 @@ def merge_blocks(L, R, c):
     B[L].vars = B[L].vars.union(B[R].vars)
     B[L].nvars = B[L].nvars + B[R].nvars
     B[R].nvars = 0
+
+    node_blocks.blocks = block
+    node_blocks.offset = offset
+    node_blocks.B = B
 
 
 def expand_block(b, c_tilde, constraints: Constraints):
