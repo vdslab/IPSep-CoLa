@@ -17,8 +17,6 @@ from scipy.sparse.linalg import cg
 from .block import Block
 from .constraint import Constraints
 
-# C = [[] for _ in range(1)]
-# c_graph = [[] for _ in range(1)]
 lm = dict()
 blocks = [i for i in range(1)]
 offset = [0 for _ in range(1)]
@@ -50,7 +48,7 @@ def violation(ci):
     return posn(left(ci)) + gap(ci) - posn(right(ci))
 
 
-def solve_QPSC(A, b, C):
+def solve_QPSC(A, b, C, constraints: Constraints):
     global x
     global B
     global offset
@@ -64,7 +62,7 @@ def solve_QPSC(A, b, C):
         x_hat = np.copy(x)
         x = x_hat - s[0][0] * g
         no_split = split_blocks()
-        x_bar = project(C)
+        x_bar = project(C, constraints)
         d = x_bar - x_hat
         alpha = max(g.T @ d / (d.T @ A @ d), 1)
         x = x_hat + alpha * d
@@ -76,7 +74,7 @@ def solve_QPSC(A, b, C):
     return x
 
 
-def project(C):
+def project(C, constraints: Constraints):
     global x
     global blocks
     global offset
@@ -92,7 +90,7 @@ def project(C):
         if block[left(c)] != block[right(c)]:
             merge_blocks(block[left(c)], block[right(c)], c)
         else:
-            expand_block(block[left(c)], c)
+            expand_block(block[left(c)], c, constraints)
         c = np.argmax([violation(ci) for ci in range(len(C))])
 
     n = len(block)
@@ -123,7 +121,7 @@ def merge_blocks(L, R, c):
     B[R].nvars = 0
 
 
-def expand_block(b, c_tilde):
+def expand_block(b, c_tilde, constraints: Constraints):
     global lm
     global x
     global offset
@@ -132,12 +130,17 @@ def expand_block(b, c_tilde):
     for c in B[b].active:
         lm[c] = 0
     AC: set = B[b].active
-    comp_dfdv(left(c_tilde), AC, None)
-    v = comp_path(left(c_tilde), right(c_tilde), AC)
+
+    c_tilde_left = constraints.left_index(c_tilde)
+    c_tilde_right = constraints.right_index(c_tilde)
+    comp_dfdv(c_tilde_left, AC, None)
+    v = comp_path(c_tilde_left, c_tilde_right, AC)
     ps = set()
     for c in AC:
         for j in range(len(v) - 1):
-            if left(c) == v[j] and right(c) == v[j + 1]:
+            c_left = constraints.left_index(c)
+            c_right = constraints.right_index(c)
+            if c_left == v[j] and c_right == v[j + 1]:
                 ps.add(c)
                 break
 
@@ -147,7 +150,7 @@ def expand_block(b, c_tilde):
         AC.discard(sc)
 
     # for v in connected(right(c_tilde), AC):
-    for v in B[right(c_tilde)].vars:
+    for v in B[c_tilde_right].vars:
         offset[v] += violation(c_tilde)
     AC.add(c_tilde)
     B[b].active = AC
@@ -253,8 +256,8 @@ def connected(s, AC, constraints: Constraints):
     return v
 
 
-def comp_path(left, right, AC):
-    global c_graph
+def comp_path(left, right, AC, constraints: Constraints):
+    c_graph = constraints.graph
     v = set()
     v.add(left)
     v.add(right)
@@ -273,7 +276,9 @@ def comp_path(left, right, AC):
     return list(v)
 
 
-def stress_majorization(nodes, links, *, dim=2, initZ=None):
+def stress_majorization(
+    nodes, links, *, dim=2, initZ=None, constraints: Constraints = None
+):
     global x
     global blocks
     global offset
@@ -315,7 +320,7 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
         Lz = z_laplacian(weights, dist, Z)
         b = (Lz @ Z[:, 1]).reshape(-1, 1)
         A = Lw
-        delta_x = solve_QPSC(A, b, C)
+        delta_x = solve_QPSC(A, b, C, constraints)
         Z[:, 1:2] = delta_x.flatten()[:, None]
         Z[0] = [0 for _ in range(dim)]
 
@@ -365,13 +370,7 @@ if __name__ == "__main__":
     #     C.append([c["right"], c["left"], 1])
     const = Constraints(C, n)
 
-    # c_graph = [[] for _ in range(n)]
-    # for l, r, g in C:
-    #     c_graph[l - 1].append((r - 1, g))
-    # for l, r, g in C:
-    #     c_graph[l - 1].append((r - 1, g))
-
-    Z = stress_majorization(nodes, links)
+    Z = stress_majorization(nodes, links, constraints=const)
 
     def view():
         G = nx.DiGraph()
