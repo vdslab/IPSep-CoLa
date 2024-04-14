@@ -14,7 +14,7 @@ from majorization.main import (
 from networkx import floyd_warshall_numpy
 from scipy.sparse.linalg import cg
 
-from .block import Block
+from .block import Block, NodeBlocks
 from .constraint import Constraints
 
 lm = dict()
@@ -48,11 +48,8 @@ def violation(ci):
     return posn(left(ci)) + gap(ci) - posn(right(ci))
 
 
-def solve_QPSC(A, b, C, constraints: Constraints):
-    global x
-    global B
-    global offset
-    global blocks
+def solve_QPSC(A, b, C, constraints: Constraints, node_blocks: NodeBlocks):
+    x = node_blocks.positions
 
     print("solve_QPSC")
 
@@ -61,11 +58,13 @@ def solve_QPSC(A, b, C, constraints: Constraints):
         s = (g.T @ g) / (g.T @ A @ g)
         x_hat = np.copy(x)
         x = x_hat - s[0][0] * g
+        node_blocks.positions = x
         no_split = split_blocks()
-        x_bar = project(C, constraints)
+        x_bar = project(C, constraints, node_blocks)
         d = x_bar - x_hat
         alpha = max(g.T @ d / (d.T @ A @ d), 1)
         x = x_hat + alpha * d
+        node_blocks.positions = x
 
         norm = np.linalg.norm(x - x_hat, ord=2)
         if norm < 1e-6 and no_split:
@@ -74,12 +73,11 @@ def solve_QPSC(A, b, C, constraints: Constraints):
     return x
 
 
-def project(C, constraints: Constraints):
-    global x
-    global blocks
-    global offset
-    global B
-    block = blocks
+def project(C, constraints: Constraints, node_blocks: NodeBlocks):
+    x = node_blocks.positions
+    B = node_blocks.B
+    offset = node_blocks.offset
+    block = node_blocks.blocks
 
     if len(C) == 0:
         return x
@@ -87,16 +85,19 @@ def project(C, constraints: Constraints):
     c = np.argmax([violation(ci) for ci in range(len(C))])
 
     while violation(c) > 0:
-        if block[left(c)] != block[right(c)]:
-            merge_blocks(block[left(c)], block[right(c)], c)
+        c_left = constraints.left_index(c)
+        c_right = constraints.right_index(c)
+        if block[c_left] != block[c_right]:
+            merge_blocks(block[c_left], block[c_right], c)
         else:
-            expand_block(block[left(c)], c, constraints)
+            expand_block(block[c_left], c, constraints)
         c = np.argmax([violation(ci) for ci in range(len(C))])
 
     n = len(block)
     for i in range(n):
         x[i] = B[block[i]].posn + offset[i]
 
+    node_blocks.positions = x
     return x
 
 
@@ -309,6 +310,7 @@ def stress_majorization(
     Z[0] = [0 for _ in range(dim)]
     x = [[Z[i][1]] for i in range(n)]
     B = [Block(i, Z[i][1]) for i in range(n)]
+    x_blocks = NodeBlocks([Z[i][1] for i in range(n)])
     #
     alpha = 2
     weights = weights_of_normalization_constant(alpha, dist)
