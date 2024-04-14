@@ -1,4 +1,6 @@
+import datetime
 import json
+import os
 from math import pow
 
 import matplotlib.pyplot as plt
@@ -135,7 +137,7 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
 
 
 if __name__ == "__main__":
-    with open("./src/majorization/data.json") as f:
+    with open("./src/data/no_acycle_tree.json") as f:
         data = json.load(f)
 
     nodes = [i + 1 for i in range(len(data["nodes"]))]
@@ -143,6 +145,7 @@ if __name__ == "__main__":
 
     links = [[d["source"] + 1, d["target"] + 1] for d in data["links"]]
 
+    np.random.seed(0)
     Z = stress_majorization(nodes, links)
 
     def view():
@@ -152,7 +155,13 @@ if __name__ == "__main__":
         for link in links:
             G.add_edge(*link)
         position = {i + 1: Z[i] for i in range(n)}
-        nx.draw(G, pos=position)
-        plt.show()
+        today = datetime.date.today()
+        now = datetime.datetime.now().time()
+        os.makedirs(f"result/{today}", exist_ok=True)
+
+        plt.figure(figsize=(10, 10))
+        plt.title("Stress Majorization (seed 0)")
+        nx.draw(G, pos=position, node_size=300, labels={i + 1: i for i in range(n)})
+        plt.savefig(f"result/{today}/{now}.png")
 
     view()
