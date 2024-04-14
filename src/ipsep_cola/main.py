@@ -159,7 +159,7 @@ def expand_block(b, c_tilde, constraints: Constraints, node_blocks: NodeBlocks):
         AC.discard(sc)
 
     for v in connected(c_tilde_right, AC, constraints):
-        offset[v] += violation(c_tilde, constraints, node_blocks)
+        offset[v] += max(0.0001, violation(c_tilde, constraints, node_blocks))
     AC.add(c_tilde)
     B[b].active = AC
     B[b].posn = sum([x[j][0] - offset[j] for j in B[b].vars]) / B[b].nvars
@@ -299,7 +299,6 @@ def stress_majorization(
     dist = floyd_warshall_numpy(G)
 
     # 座標の初期値はランダム
-    np.random.seed(0)
     Z = np.random.rand(n, dim)
     if initZ is not None:
         Z = initZ
@@ -324,8 +323,6 @@ def stress_majorization(
         blocks.positions = Z[:, 1].reshape(-1, 1)
         return blocks
 
-    # update_ipset_cola(y_blocks)
-
     # 終了する閾値
     eps = 0.0001
     now_stress = stress(Z, dist, weights)
@@ -338,15 +335,9 @@ def stress_majorization(
         Lz = z_laplacian(weights, dist, Z)
 
         for a in range(dim):
-            # Ax = b
             Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
-        # Z[1:, 0] = cg(Lw[1:, 1:], (Lz @ Z[:, 0])[1:])[0]
-
-        # x_blocks = update_ipset_cola(Z, x_blocks)
 
         y_blocks = update_ipset_cola(y_blocks)
-
-        # Z = np.concatenate([x_blocks.positions, y_blocks.positions], axis=1)
 
         new_stress = stress(Z, dist, weights)
         print(f"{now_stress=} -> {new_stress=}")
@@ -355,15 +346,12 @@ def stress_majorization(
         if delta_stress(now_stress, new_stress) < eps:
             break
         now_stress = new_stress
-        break
 
     return Z
 
 
 if __name__ == "__main__":
-    # with open("./src/ipsep_cola/line.json") as f:
-    #     data = json.load(f)
-    with open("./src/ipsep_cola/line.json") as f:
+    with open("./src/data/no_cycle_tree.json") as f:
         data = json.load(f)
 
     nodes = [i for i in range(len(data["nodes"]))]
@@ -377,6 +365,7 @@ if __name__ == "__main__":
         C.append([c["left"], c["right"], 1])
     const = Constraints(C, n)
 
+    np.random.seed(0)
     Z = stress_majorization(nodes, links, constraints=const)
 
     def view():
@@ -393,6 +382,7 @@ if __name__ == "__main__":
         os.makedirs(f"result/{today}", exist_ok=True)
 
         plt.figure(figsize=(10, 10))
+        plt.title("IPSEP_COLA (seed 0) circle")
         nx.draw(G, pos=position, node_size=300, labels={i: i for i in range(n)})
         plt.savefig(f"result/{today}/{now}.png")
         # plt.show()
