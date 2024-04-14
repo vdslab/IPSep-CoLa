@@ -11,8 +11,12 @@ class Block:
 
 
 class NodeBlocks:
-    def __init__(self, node_len, axis_positions):
+    def __init__(self, axis_positions):
         n = len(axis_positions)
         self.blocks = [i for i in range(n)]
         self.offset = [0 for _ in range(n)]
-        self.B = [Block(i, axis_positions[i]) for i in range(n)]
+        self.B: list[Block] = [Block(i, axis_positions[i]) for i in range(n)]
+        self.positions = axis_positions
+
+    def posn(self, vi):
+        return self.B[self.blocks[vi]].posn + self.offset[vi]
