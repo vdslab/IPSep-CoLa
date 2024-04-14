@@ -14,21 +14,11 @@ from majorization.main import (
 from networkx import floyd_warshall_numpy
 from scipy.sparse.linalg import cg
 
+from .block import Block
+from .constraint import Constraints
 
-class Block:
-    def __init__(self, node_id, posn):
-        self.posn = posn
-        self.nvars = 1
-        self.active = set()
-        self.vars = set()
-        self.vars.add(node_id)
-
-    def __str__(self) -> str:
-        return f"Block(posn={self.posn}, nvars={self.nvars}, active={self.active}, vars={self.vars})"
-
-
-C = [[] for _ in range(1)]
-c_graph = [[] for _ in range(1)]
+# C = [[] for _ in range(1)]
+# c_graph = [[] for _ in range(1)]
 lm = dict()
 blocks = [i for i in range(1)]
 offset = [0 for _ in range(1)]
@@ -186,7 +176,7 @@ def comp_dfdv(v, AC, u):
     return dfdv
 
 
-def split_blocks():
+def split_blocks(constraints: Constraints):
     global lm
     global x
     global offset
@@ -218,7 +208,7 @@ def split_blocks():
         no_split = False
         AC.remove(sc)
         s = right(sc)
-        B[s].vars = connected(s, AC)
+        B[s].vars = connected(s, AC, constraints)
         for v in B[s].vars:
             block[v] = s
 
@@ -243,8 +233,8 @@ def split_blocks():
     return no_split
 
 
-def connected(s, AC):
-    global c_graph
+def connected(s, AC, constraints: Constraints):
+    c_graph = constraints.graph
 
     v = set()
     v.add(s)
@@ -369,15 +359,17 @@ if __name__ == "__main__":
 
     links = [[d["source"] + 1, d["target"] + 1] for d in data["links"]]
     constraints = data["constraints"]
+
     C = []
     # for c in constraints:
     #     C.append([c["right"], c["left"], 1])
+    const = Constraints(C, n)
 
-    c_graph = [[] for _ in range(n)]
-    for l, r, g in C:
-        c_graph[l - 1].append((r - 1, g))
-    for l, r, g in C:
-        c_graph[l - 1].append((r - 1, g))
+    # c_graph = [[] for _ in range(n)]
+    # for l, r, g in C:
+    #     c_graph[l - 1].append((r - 1, g))
+    # for l, r, g in C:
+    #     c_graph[l - 1].append((r - 1, g))
 
     Z = stress_majorization(nodes, links)
 
@@ -396,6 +388,6 @@ if __name__ == "__main__":
         plt.figure(figsize=(10, 10))
         nx.draw(G, pos=position, node_size=300, labels={i + 1: i for i in range(n)})
         plt.savefig(f"result/{today}/{now}.png")
-        plt.show()
+        # plt.show()
 
     view()
