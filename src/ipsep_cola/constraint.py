@@ -5,11 +5,11 @@ class Constraints:
         for l, r, g in C:
             self.graph[l - 1].append((r - 1, g))
 
-    def left_index(self, index) -> int:
-        return self.constraints[index][0] - 1
+    def left(self, index) -> int:
+        return self.constraints[index][0]
 
-    def right_index(self, index) -> int:
-        return self.constraints[index][1] - 1
+    def right(self, index) -> int:
+        return self.constraints[index][1]
 
     def gap(self, index) -> int:
         return self.constraints[index][2]
