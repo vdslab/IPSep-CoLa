@@ -137,7 +137,7 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
 
 
 if __name__ == "__main__":
-    with open("./src/data/no_acycle_tree.json") as f:
+    with open("./src/data/no_cycle_tree.json") as f:
         data = json.load(f)
 
     nodes = [i + 1 for i in range(len(data["nodes"]))]
