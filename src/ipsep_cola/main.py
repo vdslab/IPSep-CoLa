@@ -90,7 +90,7 @@ def project(C, constraints: Constraints, node_blocks: NodeBlocks):
         if block[c_left] != block[c_right]:
             merge_blocks(block[c_left], block[c_right], c, constraints, node_blocks)
         else:
-            expand_block(block[c_left], c, constraints)
+            expand_block(block[c_left], c, constraints, node_blocks)
         c = np.argmax([violation(ci) for ci in range(len(C))])
 
     n = len(block)
@@ -125,11 +125,11 @@ def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
     node_blocks.B = B
 
 
-def expand_block(b, c_tilde, constraints: Constraints):
+def expand_block(b, c_tilde, constraints: Constraints, node_blocks: NodeBlocks):
     global lm
-    global x
-    global offset
-    global B
+    x = node_blocks.positions
+    B = node_blocks.B
+    offset = node_blocks.offset
 
     for c in B[b].active:
         lm[c] = 0
@@ -158,7 +158,11 @@ def expand_block(b, c_tilde, constraints: Constraints):
         offset[v] += violation(c_tilde)
     AC.add(c_tilde)
     B[b].active = AC
-    B[b].posn = sum([x[j][0] - offset[j] for j in B[b].vars]) / B[b].nvars
+    B[b].posn = sum([x[j] - offset[j] for j in B[b].vars]) / B[b].nvars
+
+    node_blocks.positions = x
+    node_blocks.B = B
+    node_blocks.offset = offset
 
 
 def comp_dfdv(v, AC, u):
