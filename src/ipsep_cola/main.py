@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+from block import NodeBlocks
 from majorization.main import (
     stress,
     weight_laplacian,
@@ -12,6 +13,7 @@ from majorization.main import (
     z_laplacian,
 )
 from networkx import floyd_warshall_numpy
+from QPSC import solve_QPSC
 from scipy.sparse.linalg import cg
 
 lm = dict()
@@ -51,13 +53,13 @@ def IPSep_CoLa(graph: nx.Graph, edge_length: float = 20.0):
         for a in range(2):
             Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
 
-        # y_blocks = NodeBlocks(Z[:, 1].flatten())
-        # b = (Lz @ Z[:, 1]).reshape(-1, 1)
-        # A = Lw
-        # delta_x = solve_QPSC(A, b, constraints, y_blocks)
-        # Z[:, 1:2] = delta_x.flatten()[:, None]
-        # for i in range(n - 1, -1, -1):
-        #     Z[i] -= Z[0]
+        y_blocks = NodeBlocks(Z[:, 1].flatten())
+        b = (Lz @ Z[:, 1]).reshape(-1, 1)
+        A = Lw
+        delta_x = solve_QPSC(A, b, constraints, y_blocks)
+        Z[:, 1:2] = delta_x.flatten()[:, None]
+        for i in range(n - 1, -1, -1):
+            Z[i] -= Z[0]
 
         now_stress = new_stress
         new_stress = stress(Z, dist, weight)
