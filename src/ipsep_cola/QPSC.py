@@ -169,6 +169,24 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
     return x
 
 
+def connected(s, AC, constraints: Constraints):
+    c_graph = constraints.graph
+
+    v = set()
+    v.add(s)
+    # left to right path nodes
+    stack = [s]
+    while len(stack) > 0:
+        u = stack.pop()
+        for vv, cost in c_graph[u]:
+            if vv in v:
+                continue
+            v.add(vv)
+            stack.append(vv)
+
+    return v
+
+
 # def violation(ci, constraints: Constraints, node_blocks: NodeBlocks):
 #     ci_left = constraints.left(ci)
 #     ci_right = constraints.right(ci)
@@ -267,26 +285,6 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
 #     node_blocks.positions = x
 #     node_blocks.B = B
 #     node_blocks.offset = offset
-
-
-# def connected(s, AC, constraints: Constraints):
-#     c_graph = constraints.graph
-
-#     v = set()
-#     v.add(s)
-#     # left to right path nodes
-#     stack = [s]
-#     while len(stack) > 0:
-#         u = stack.pop()
-#         for vv, cost in c_graph[u]:
-#             if u not in AC or v not in AC:
-#                 continue
-#             if vv in v:
-#                 continue
-#             v.add(vv)
-#             stack.append(vv)
-
-#     return v
 
 
 # def comp_path(left, right, AC, constraints: Constraints):
