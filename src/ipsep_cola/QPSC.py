@@ -50,23 +50,23 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
         if len(AC) == 0:
             continue
 
-        # b.posn = sum([position[j] - node_blocks.offset[j] for j in b.vars]) / b.nvars
+        b.posn = sum([position[j] - node_blocks.offset[j] for j in b.vars]) / b.nvars
 
-        # for c in AC:
-        #     lm[c] = 0
+        for c in AC:
+            lm[c] = 0
 
-        # v = b.vars.pop()
-        # b.vars.add(v)
+        v = b.vars.pop()
+        b.vars.add(v)
 
-        # comp_dfdv(v, AC, None, constraints, node_blocks)
-        # AC_list = list(AC)
-        # sc = AC_list[np.argmin([lm[c] for c in AC_list])]
-        # if lm[sc] >= 0:
-        #     break
-        # no_split = False
-        # AC.discard(sc)
+        comp_dfdv(v, AC, None, constraints, node_blocks)
+        AC_list = list(AC)
+        sc = AC_list[np.argmin([lm[c] for c in AC_list])]
+        if lm[sc] >= 0:
+            break
+        no_split = False
+        AC.discard(sc)
 
-        # s = constraints.right(sc)
+        s = constraints.right(sc)
 
         # node_blocks.B[s].vars = connected(s, AC, constraints)
 
@@ -134,29 +134,29 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
 #     return no_split
 
 
-# def comp_dfdv(v, AC, u, constraints: Constraints, node_blocks: NodeBlocks):
-#     """
-#     - https://doi.org/10.1007/11618058_15
-#     O(n log n) ?
-#     """
-#     global lm
-#     x = node_blocks.positions
+def comp_dfdv(v, AC, u, constraints: Constraints, node_blocks: NodeBlocks):
+    """
+    - https://doi.org/10.1007/11618058_15
+    O(n log n) ?
+    """
+    global lm
+    x = node_blocks.positions
 
-#     dfdv = node_blocks.posn(v) - x[v]
-#     for c in AC:
-#         c_left = constraints.left(c)
-#         c_right = constraints.right(c)
-#         if not (v == c_left and u != c_right):
-#             continue
-#         lm[c] = comp_dfdv(c_right, AC, v, constraints, node_blocks)
-#         dfdv += lm[c]
-#     for c in AC:
-#         if not (v == c_right and u != c_left):
-#             continue
-#         lm[c] = -comp_dfdv(c_left, AC, v, constraints, node_blocks)
-#         dfdv -= lm[c]
+    dfdv = node_blocks.posn(v) - x[v]
+    for c in AC:
+        c_left = constraints.left(c)
+        c_right = constraints.right(c)
+        if not (v == c_left and u != c_right):
+            continue
+        lm[c] = comp_dfdv(c_right, AC, v, constraints, node_blocks)
+        dfdv += lm[c]
+    for c in AC:
+        if not (v == c_right and u != c_left):
+            continue
+        lm[c] = -comp_dfdv(c_left, AC, v, constraints, node_blocks)
+        dfdv -= lm[c]
 
-#     return dfdv
+    return dfdv
 
 
 def project(constraints: Constraints, node_blocks: NodeBlocks):
