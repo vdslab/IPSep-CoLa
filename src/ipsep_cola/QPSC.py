@@ -68,7 +68,26 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
 
         s = constraints.right(sc)
 
-        # node_blocks.B[s].vars = connected(s, AC, constraints)
+        node_blocks.B[s].vars = connected(s, AC, constraints)
+
+        for v in node_blocks.B[s].vars:
+            node_blocks.blocks[v] = s
+
+        b.vars = b.vars.difference(node_blocks.B[s].vars)
+        node_blocks.B[s].nvars = len(node_blocks.B[s].vars)
+        b.nvars = len(b.vars)
+        node_blocks.B[s].posn = (
+            sum([position[j] - node_blocks.offset[j] for j in node_blocks.B[s].vars])
+            / node_blocks.B[s].nvars
+        )
+        b.posn = sum([position[j] - node_blocks.offset[j] for j in b.vars]) / b.nvars
+        b.active = {
+            c
+            for c in AC
+            if constraints.left(c) in node_blocks.B[s].vars
+            and constraints.right(c) in node_blocks.B[s].vars
+        }
+        node_blocks.B[s].active = AC.difference(b.active)
 
     return no_split
 
