@@ -1,10 +1,18 @@
 import numpy as np
 from block import NodeBlocks
 from constraint import Constraints
+from numpy import ndarray
+
+lm = dict()
 
 
-def solve_QPSC(A, b, constraints: Constraints, node_blocks: NodeBlocks):
-    x = node_blocks.positions
+def solve_QPSC(
+    A: ndarray, b: ndarray, constraints: Constraints, node_blocks: NodeBlocks
+):
+    global lm
+    lm = dict()
+    x = np.copy(node_blocks.positions)
+    x = x.reshape(-1, 1)
 
     print("solve_QPSC")
 
@@ -13,11 +21,10 @@ def solve_QPSC(A, b, constraints: Constraints, node_blocks: NodeBlocks):
         s = (g.T @ g) / (g.T @ A @ g)
         x_hat = np.copy(x)
         x = x_hat - s[0][0] * g
-        node_blocks.positions = x
-        no_split = split_blocks(constraints, node_blocks)
+        # 論文ではx．だけどx_hatにさせてくれ.
+        no_split = split_blocks(x_hat.flatten(), constraints, node_blocks)
         x_bar = project(constraints, node_blocks)
         d = x_bar - x_hat
-        # print(len(d), len(d[0]))
         divede = d.T @ A @ d
         alpha = max(g.T @ d / divede, 1) if divede > 1e-6 else 1
         x = x_hat + alpha * d
@@ -30,9 +37,126 @@ def solve_QPSC(A, b, constraints: Constraints, node_blocks: NodeBlocks):
     return x
 
 
-def split_blocks(constraints: Constraints, node_blocks: NodeBlocks):
+def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeBlocks):
+    if position.ndim != 1:
+        raise ValueError("positions must be a 1D array")
+
     no_split = True
+
+    for b in node_blocks.B:
+        if b.nvars == 0:
+            continue
+        AC: set = b.active
+        if len(AC) == 0:
+            continue
+
+        # b.posn = sum([position[j] - node_blocks.offset[j] for j in b.vars]) / b.nvars
+
+        # for c in AC:
+        #     lm[c] = 0
+
+        # v = b.vars.pop()
+        # b.vars.add(v)
+
+        # comp_dfdv(v, AC, None, constraints, node_blocks)
+        # AC_list = list(AC)
+        # sc = AC_list[np.argmin([lm[c] for c in AC_list])]
+        # if lm[sc] >= 0:
+        #     break
+        # no_split = False
+        # AC.discard(sc)
+
+        # s = constraints.right(sc)
+
+        # node_blocks.B[s].vars = connected(s, AC, constraints)
+
     return no_split
+
+
+# def split_blocks(constraints: Constraints, node_blocks: NodeBlocks):
+#     global lm
+#     block = node_blocks.blocks
+#     offset = node_blocks.offset
+#     B = node_blocks.B
+#     x = node_blocks.positions
+
+#     no_split = True
+#     for i in range(len(B)):
+#         if B[i].nvars == 0:
+#             continue
+
+#         B[i].posn = sum([x[j][0] - offset[j] for j in B[i].vars]) / B[i].nvars
+#         AC: set = B[i].active
+#         for c in AC:
+#             lm[c] = 0
+#         # random?
+#         v = B[i].vars.pop()
+#         B[i].vars.add(v)
+
+#         comp_dfdv(v, AC, None, constraints, node_blocks)
+
+#         if len(AC) == 0:
+#             continue
+#         sc = list(AC)[np.argmin([lm[c] for c in AC])]
+#         if lm[sc] >= 0:
+#             break
+#         no_split = False
+#         AC.remove(sc)
+#         s = constraints.right(sc)
+#         B[s].vars = connected(s, AC, constraints)
+#         for v in B[s].vars:
+#             block[v] = s
+
+#         B[i].vars = B[i].vars.difference(B[s].vars)
+
+#         B[s].nvars = len(B[s].vars)
+#         B[i].nvars = len(B[i].vars)
+
+#         if B[s].nvars == 0:
+#             B[s].posn = 0
+#         else:
+#             B[s].posn = sum([x[j][0] - offset[j] for j in B[s].vars]) / B[s].nvars
+
+#         if B[i].nvars == 0:
+#             B[i].posn = 0
+#         else:
+#             B[i].posn = sum([x[j][0] - offset[j] for j in B[i].vars]) / B[i].nvars
+
+#         B[i].active = {
+#             c
+#             for c in AC
+#             if constraints.left(c) in B[s].vars and constraints.right(c) in B[s].vars
+#         }
+#         B[s].active = AC.difference(B[i].active)
+
+#     node_blocks.blocks = block
+#     node_blocks.B = B
+#     return no_split
+
+
+# def comp_dfdv(v, AC, u, constraints: Constraints, node_blocks: NodeBlocks):
+#     """
+#     - https://doi.org/10.1007/11618058_15
+#     O(n log n) ?
+#     """
+#     global lm
+#     x = node_blocks.positions
+
+#     dfdv = node_blocks.posn(v) - x[v]
+#     for c in AC:
+#         c_left = constraints.left(c)
+#         c_right = constraints.right(c)
+#         if not (v == c_left and u != c_right):
+#             continue
+#         lm[c] = comp_dfdv(c_right, AC, v, constraints, node_blocks)
+#         dfdv += lm[c]
+#     for c in AC:
+#         if not (v == c_right and u != c_left):
+#             continue
+#         lm[c] = -comp_dfdv(c_left, AC, v, constraints, node_blocks)
+#         dfdv -= lm[c]
+
+#     return dfdv
 
 
 def project(constraints: Constraints, node_blocks: NodeBlocks):
@@ -49,32 +173,6 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
 #     ci_left = constraints.left(ci)
 #     ci_right = constraints.right(ci)
 #     return node_blocks.posn(ci_left) + constraints.gap(ci) - node_blocks.posn(ci_right)
-
-
-# def solve_QPSC(A, b, constraints: Constraints, node_blocks: NodeBlocks):
-#     x = node_blocks.positions
-
-#     print("solve_QPSC")
-
-#     while True:
-#         g = A @ x + b
-#         s = (g.T @ g) / (g.T @ A @ g)
-#         x_hat = np.copy(x)
-#         x = x_hat - s[0][0] * g
-#         node_blocks.positions = x
-#         no_split = split_blocks(constraints, node_blocks)
-#         x_bar = project(constraints, node_blocks)
-#         d = x_bar - x_hat
-#         divede = d.T @ A @ d
-#         alpha = max(g.T @ d / (d.T @ A @ d), 1) if divede != 0 else 1
-#         x = x_hat + alpha * d
-#         node_blocks.positions = x
-
-#         norm = np.linalg.norm(x - x_hat, ord=2)
-#         if norm < 1e-6 and no_split:
-#             break
-
-#     return x
 
 
 # def project(constraints: Constraints, node_blocks: NodeBlocks):
@@ -169,91 +267,6 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
 #     node_blocks.positions = x
 #     node_blocks.B = B
 #     node_blocks.offset = offset
-
-
-# def comp_dfdv(v, AC, u, constraints: Constraints, node_blocks: NodeBlocks):
-#     global lm
-#     x = node_blocks.positions
-
-#     dfdv = node_blocks.posn(v) - x[v][0]
-#     if v == u:
-#         return dfdv
-
-#     for c in AC:
-#         c_left = constraints.left(c)
-#         c_right = constraints.right(c)
-#         if not (v == c_left and u != c_right):
-#             continue
-#         lm[c] = comp_dfdv(c_right, AC, v, constraints, node_blocks)
-#         dfdv += lm[c]
-#     for c in AC:
-#         if not (v == c_right and u != c_left):
-#             continue
-#         lm[c] = -comp_dfdv(c_left, AC, v, constraints, node_blocks)
-#         dfdv -= lm[c]
-
-#     return dfdv
-
-
-# def split_blocks(constraints: Constraints, node_blocks: NodeBlocks):
-#     global lm
-#     block = node_blocks.blocks
-#     offset = node_blocks.offset
-#     B = node_blocks.B
-#     x = node_blocks.positions
-
-#     no_split = True
-#     for i in range(len(B)):
-#         if B[i].nvars == 0:
-#             continue
-
-#         B[i].posn = sum([x[j][0] - offset[j] for j in B[i].vars]) / B[i].nvars
-#         AC: set = B[i].active
-#         for c in AC:
-#             lm[c] = 0
-#         # random?
-#         v = B[i].vars.pop()
-#         B[i].vars.add(v)
-
-#         comp_dfdv(v, AC, None, constraints, node_blocks)
-
-#         if len(AC) == 0:
-#             continue
-#         sc = list(AC)[np.argmin([lm[c] for c in AC])]
-#         if lm[sc] >= 0:
-#             break
-#         no_split = False
-#         AC.remove(sc)
-#         s = constraints.right(sc)
-#         B[s].vars = connected(s, AC, constraints)
-#         for v in B[s].vars:
-#             block[v] = s
-
-#         B[i].vars = B[i].vars.difference(B[s].vars)
-
-#         B[s].nvars = len(B[s].vars)
-#         B[i].nvars = len(B[i].vars)
-
-#         if B[s].nvars == 0:
-#             B[s].posn = 0
-#         else:
-#             B[s].posn = sum([x[j][0] - offset[j] for j in B[s].vars]) / B[s].nvars
-
-#         if B[i].nvars == 0:
-#             B[i].posn = 0
-#         else:
-#             B[i].posn = sum([x[j][0] - offset[j] for j in B[i].vars]) / B[i].nvars
-
-#         B[i].active = {
-#             c
-#             for c in AC
-#             if constraints.left(c) in B[s].vars and constraints.right(c) in B[s].vars
-#         }
-#         B[s].active = AC.difference(B[i].active)
-
-#     node_blocks.blocks = block
-#     node_blocks.B = B
-#     return no_split
 
 
 # def connected(s, AC, constraints: Constraints):
