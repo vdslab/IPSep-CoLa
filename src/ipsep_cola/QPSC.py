@@ -172,6 +172,11 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
 def connected(s, AC, constraints: Constraints):
     c_graph = constraints.graph
 
+    AC_vars = set()
+    for c in AC:
+        AC_vars.add(constraints.left(c))
+        AC_vars.add(constraints.right(c))
+
     v = set()
     v.add(s)
     # left to right path nodes
@@ -180,6 +185,8 @@ def connected(s, AC, constraints: Constraints):
         u = stack.pop()
         for vv, cost in c_graph[u]:
             if vv in v:
+                continue
+            if vv not in AC_vars:
                 continue
             v.add(vv)
             stack.append(vv)
