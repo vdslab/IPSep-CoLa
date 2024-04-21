@@ -16,19 +16,19 @@ def solve_QPSC(
     x = np.copy(node_blocks.positions)
     x = x.reshape(-1, 1)
 
-    print("solve_QPSC")
-
-    while True:
+    iter = 30
+    while iter > 0:
+        iter -= 1
         g = A @ x + b
         s = (g.T @ g) / (g.T @ A @ g)
         x_hat = np.copy(x)
         x = x_hat - s[0][0] * g
-        # 論文ではx．だけどx_hatにさせてくれ.
-        no_split = split_blocks(x_hat.flatten(), constraints, node_blocks)
+        no_split = split_blocks(x.flatten(), constraints, node_blocks)
         x_bar = project(constraints, node_blocks)
+        
         d = x_bar - x_hat
         divede = d.T @ A @ d
-        alpha = max(g.T @ d / divede, 1) if divede > 1e-6 else 1
+        alpha = max(g.T @ d / divede, 1) if divede > 1e-6 else 0
         x = x_hat + alpha * d
         node_blocks.positions = x.flatten()
 
@@ -42,7 +42,6 @@ def solve_QPSC(
 def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeBlocks):
     if position.ndim != 1:
         raise ValueError("positions must be a 1D array")
-    print("split_blocks")
 
     no_split = True
 
@@ -53,7 +52,9 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
         if len(AC) == 0:
             continue
 
-        b.posn = sum([position[j] - node_blocks.offset[j] for j in b.vars]) / b.nvars
+        b.posn = sum([position[j] - node_blocks.offset[j] for j in b.vars]) / float(
+            b.nvars
+        )
 
         for c in AC:
             lm[c] = 0
@@ -84,15 +85,15 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
                 sum(
                     [position[j] - node_blocks.offset[j] for j in node_blocks.B[s].vars]
                 )
-                / node_blocks.B[s].nvars
+                / float(node_blocks.B[s].nvars)
             )
             if node_blocks.B[s].nvars != 0
-            else node_blocks.B[s].posn
+            else 0
         )
         b.posn = (
-            sum([position[j] - node_blocks.offset[j] for j in b.vars]) / b.nvars
+            sum([position[j] - node_blocks.offset[j] for j in b.vars]) / float(b.nvars)
             if b.nvars != 0
-            else b.posn
+            else 0
         )
         b.active = {
             c
@@ -133,15 +134,11 @@ def comp_dfdv(v, AC, u, constraints: Constraints, node_blocks: NodeBlocks):
 def connected(s, AC, constraints: Constraints):
     c_graph = constraints.graph
 
-    AC_vars = set()
     AC_edges = set()
     for c in AC:
         c_left = constraints.left(c)
         c_right = constraints.right(c)
-        AC_vars.add(constraints.left(c))
-        AC_vars.add(constraints.right(c))
         AC_edges.add((c_left, c_right))
-        AC_edges.add((c_right, c_left))
 
     v = set()
     v.add(s)
@@ -161,7 +158,6 @@ def connected(s, AC, constraints: Constraints):
 
 
 def project(constraints: Constraints, node_blocks: NodeBlocks):
-    print("project")
     n = len(node_blocks.positions)
     block = node_blocks.blocks
     offset = node_blocks.offset
@@ -175,8 +171,6 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
                 for ci in range(len(constraints.constraints))
             ]
             c_index = np.argmax(violations)
-            # c = constraints.constraints[c_index]
-            # print(c, c_index, violations)
             return c_index
 
         c = get_max_violation_c()
@@ -185,18 +179,9 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
             iter -= 1
             c_left = constraints.left(c)
             c_right = constraints.right(c)
-            # print(
-            #     f"{c}",
-            #     f"{c_left}",
-            #     f"{c_right}",
-            #     violation(c, constraints, node_blocks),
-            # )
-            # print(f"{block[c_left]}", f"{block[c_right]}")
             if block[c_left] != block[c_right]:
-                print("merge")
                 merge_blocks(block[c_left], block[c_right], c, constraints, node_blocks)
             else:
-                print("expand")
                 expand_block(block[c_left], c, constraints, node_blocks)
             c = get_max_violation_c()
 
@@ -216,7 +201,10 @@ def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
     offset = node_blocks.offset
     B = node_blocks.B
 
-    d = offset[L] + constraints.gap(c) - offset[R]
+    # Tips: LとRを合体させてしまってた
+    c_left = constraints.left(c)
+    c_right = constraints.right(c)
+    d = offset[c_left] + constraints.gap(c) - offset[c_right]
 
     B[L].posn = (B[L].posn * B[L].nvars + (B[R].posn - d) * B[R].nvars) / (
         B[L].nvars + B[R].nvars
@@ -244,7 +232,6 @@ def expand_block(b, c_tilde, constraints: Constraints, node_blocks: NodeBlocks):
         lm[c] = 0
 
     AC: set = B[b].active
-    # print("active", AC)
 
     c_tilde_left = constraints.left(c_tilde)
 
@@ -267,12 +254,15 @@ def expand_block(b, c_tilde, constraints: Constraints, node_blocks: NodeBlocks):
         sc = ps[np.argmin([lm[c] for c in ps])]
         AC.discard(sc)
 
-    # print("move", c_tilde_right, connected(c_tilde_right, AC, constraints))
     for v in connected(c_tilde_right, AC, constraints):
         offset[v] += max(0.0001, violation(c_tilde, constraints, node_blocks))
     AC.add(c_tilde)
     # B[b].active = AC
-    B[b].posn = sum([x[j] - offset[j] for j in B[b].vars]) / B[b].nvars
+    B[b].posn = (
+        sum([x[j] - offset[j] for j in B[b].vars]) / B[b].nvars
+        if B[b].nvars != 0
+        else 0
+    )
 
 
 def comp_path(left, right, AC, constraints: Constraints):
@@ -286,7 +276,7 @@ def comp_path(left, right, AC, constraints: Constraints):
         AC_vars.add(c_left)
         AC_vars.add(c_right)
         AC_edges.add((c_left, c_right))
-        AC_edges.add((c_right, c_left))
+        # AC_edges.add((c_right, c_left))
 
     if left not in AC_vars or right not in AC_vars:
         return []
