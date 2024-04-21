@@ -1,0 +1,67 @@
+{
+  "nodes": [
+    {
+      "name": "Toprato"
+    },
+    {
+      "name": "Fella"
+    },
+    {
+      "name": "Tirti"
+    },
+    {
+      "name": "Toprato"
+    },
+    {
+      "name": "Fella"
+    }
+  ],
+  "links": [
+    {
+      "target": 0,
+      "source": 1,
+      "value": 1
+    },
+    {
+      "target": 2,
+      "source": 1,
+      "value": 1
+    },
+    {
+      "target": 2,
+      "source": 3,
+      "value": 1
+    },
+    {
+      "target": 4,
+      "source": 3,
+      "value": 1
+    }
+  ],
+  "constraints": [
+    {
+      "axis": "y",
+      "left": 1,
+      "right": 0,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 1,
+      "right": 2,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 3,
+      "right": 2,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 3,
+      "right": 4,
+      "gap": 25
+    }
+  ]
+}
