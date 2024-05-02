@@ -1,0 +1,219 @@
+{
+  "nodes": [
+    {
+      "id": 0
+    },
+    {
+      "id": 1
+    },
+    {
+      "id": 2
+    },
+    {
+      "id": 3
+    },
+    {
+      "id": 4
+    },
+    {
+      "id": 5
+    },
+    {
+      "id": 6
+    },
+    {
+      "id": 7
+    },
+    {
+      "id": 8
+    },
+    {
+      "id": 9
+    },
+    {
+      "id": 10
+    },
+    {
+      "id": 11
+    },
+    {
+      "id": 12
+    },
+    {
+      "id": 13
+    },
+    {
+      "id": 14
+    },
+    {
+      "id": 15
+    },
+    {
+      "id": 16
+    }
+  ],
+  "links": [
+    {
+      "source": 0,
+      "target": 1
+    },
+    {
+      "source": 11,
+      "target": 7
+    },
+    {
+      "source": 0,
+      "target": 4
+    },
+    {
+      "source": 0,
+      "target": 10
+    },
+    {
+      "source": 12,
+      "target": 10
+    },
+    {
+      "source": 0,
+      "target": 13
+    },
+    {
+      "source": 8,
+      "target": 16
+    },
+    {
+      "source": 2,
+      "target": 3
+    },
+    {
+      "source": 12,
+      "target": 14
+    },
+    {
+      "source": 0,
+      "target": 15
+    },
+    {
+      "source": 5,
+      "target": 6
+    },
+    {
+      "source": 9,
+      "target": 11
+    },
+    {
+      "source": 14,
+      "target": 2
+    },
+    {
+      "source": 6,
+      "target": 9
+    },
+    {
+      "source": 3,
+      "target": 5
+    },
+    {
+      "source": 7,
+      "target": 8
+    }
+  ],
+  "constraints": [
+    {
+      "axis": "y",
+      "left": 0,
+      "right": 1,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 11,
+      "right": 7,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 0,
+      "right": 4,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 0,
+      "right": 10,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 12,
+      "right": 10,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 0,
+      "right": 13,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 8,
+      "right": 16,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 2,
+      "right": 3,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 12,
+      "right": 14,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 0,
+      "right": 15,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 5,
+      "right": 6,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 9,
+      "right": 11,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 14,
+      "right": 2,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 6,
+      "right": 9,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 3,
+      "right": 5,
+      "gap": 25
+    },
+    {
+      "axis": "y",
+      "left": 7,
+      "right": 8,
+      "gap": 25
+    }
+  ]
+}
