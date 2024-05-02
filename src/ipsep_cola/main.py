@@ -50,8 +50,50 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
     def delta_stress(now, new):
         return abs(now - new) / now
 
-    iter = 100
-    while delta_stress(now_stress, new_stress) > eps and iter > 0:
+    iter = 30
+    while iter > 0:
+        iter -= 1
+        Lz = z_laplacian(weight, dist, Z)
+        for a in range(2):
+            Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
+
+            # blocks = NodeBlocks(Z[:, a].flatten())
+            # b = (Lz @ Z[:, a]).reshape(-1, 1)
+            # A = Lw
+            # constraints = Constraints(C["x" if a == 0 else "y"], n)
+            # delta_x = solve_QPSC(A, b, constraints, blocks)
+            # Z[:, a : a + 1] = delta_x.flatten()[:, None]
+
+        # for i in range(n - 1, -1, -1):
+        #     Z[i] -= Z[0]
+
+        now_stress = new_stress
+        new_stress = stress(Z, dist, weight)
+        print("stress", now_stress, "->", new_stress)
+
+    iter = 20
+    while iter > 0:
+        iter -= 1
+        Lz = z_laplacian(weight, dist, Z)
+        for a in range(2):
+            # Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
+
+            blocks = NodeBlocks(Z[:, a].flatten())
+            b = (Lz @ Z[:, a]).reshape(-1, 1)
+            A = Lw
+            constraints = Constraints(C["x" if a == 0 else "y"], n)
+            delta_x = solve_QPSC(A, b, constraints, blocks)
+            Z[:, a : a + 1] = delta_x.flatten()[:, None]
+
+        for i in range(n - 1, -1, -1):
+            Z[i] -= Z[0]
+
+        now_stress = new_stress
+        new_stress = stress(Z, dist, weight)
+        print("stress", now_stress, "->", new_stress)
+
+    iter = 20
+    while iter > 0:
         iter -= 1
         Lz = z_laplacian(weight, dist, Z)
         for a in range(2):
@@ -126,13 +168,14 @@ if __name__ == "__main__":
             left = c["left"]
             right = c["right"]
             axis = c["axis"]
-            C[axis].append([left, right, max(dist[left][right] * edge_length, 30)])
+            C[axis].append([left, right, 10])
         Z = IPSep_CoLa(G, C, edge_length=20.0)
         view(Z, "IPSep_Cola (seed 0) gap=30, edge_length=20.0")
 
     def mutiple():
         gaps = np.arange(10, 51, 10)
         edge_lengths = np.arange(10.0, 51.0, 10.0)
+        # edge_lengths = [20.0]
         for gap in gaps:
             for edge_length in edge_lengths:
                 C: dict[str, list] = dict()
@@ -144,14 +187,11 @@ if __name__ == "__main__":
                     axis = c["axis"]
                     C[axis].append([left, right, gap])
 
-                try:
-                    Z = IPSep_CoLa(G, C, edge_length=edge_length)
-                    view(
-                        Z,
-                        f"IPSep_Cola (seed 0) base{gap}, {edge_length=}.png",
-                    )
-                except Exception as e:
-                    print(e)
+                Z = IPSep_CoLa(G, C, edge_length=edge_length)
+                view(
+                    Z,
+                    f"IPSep_Cola (seed 0) base{gap}, {edge_length=}",
+                )
 
     # once()
     mutiple()
