@@ -12,6 +12,7 @@ def solve_QPSC(
     A: ndarray, b: ndarray, constraints: Constraints, node_blocks: NodeBlocks
 ):
     global lm
+    print("solve_QPSC")
     lm = dict()
     x = np.copy(node_blocks.positions)
     x = x.reshape(-1, 1)
@@ -25,10 +26,10 @@ def solve_QPSC(
         x = x_hat - s[0][0] * g
         no_split = split_blocks(x.flatten(), constraints, node_blocks)
         x_bar = project(constraints, node_blocks)
-        
+
         d = x_bar - x_hat
         divede = d.T @ A @ d
-        alpha = max(g.T @ d / divede, 1) if divede > 1e-6 else 0
+        alpha = max(g.T @ d / divede, 1) if divede > 1e-6 else 1
         x = x_hat + alpha * d
         node_blocks.positions = x.flatten()
 
@@ -70,7 +71,7 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
         no_split = False
         AC.discard(sc)
 
-        s = constraints.right(sc)
+        s = node_blocks.blocks[constraints.right(sc)]
 
         node_blocks.B[s].vars = connected(s, AC, constraints)
 
@@ -206,8 +207,11 @@ def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
     c_right = constraints.right(c)
     d = offset[c_left] + constraints.gap(c) - offset[c_right]
 
-    B[L].posn = (B[L].posn * B[L].nvars + (B[R].posn - d) * B[R].nvars) / (
-        B[L].nvars + B[R].nvars
+    B[L].posn = (
+        (B[L].posn * B[L].nvars + (B[R].posn - d) * B[R].nvars)
+        / (B[L].nvars + B[R].nvars)
+        if B[L].nvars + B[R].nvars != 0
+        else 0
     )
 
     B[L].active = B[L].active.union(B[R].active)
