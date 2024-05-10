@@ -99,6 +99,7 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
     for link in links:
         G.add_edge(*link)
     dist = floyd_warshall_numpy(G)
+    dist *= 20
 
     # 座標の初期値はランダム
     Z = np.random.rand(n, dim)
@@ -145,6 +146,9 @@ if __name__ == "__main__":
 
     links = [[d["source"] + 1, d["target"] + 1] for d in data["links"]]
 
+    constraints = data["constraints"]
+    c_edges = [[c["left"] + 1, c["right"] + 1] for c in constraints]
+
     np.random.seed(0)
     Z = stress_majorization(nodes, links)
 
@@ -154,14 +158,29 @@ if __name__ == "__main__":
             G.add_node(node)
         for link in links:
             G.add_edge(*link)
+
+        edge_colors = [
+            "red" if [i + 1, j + 1] or [j + 1, i + 1] in c_edges else "gray"
+            for i, j in links
+        ]
+
         position = {i + 1: Z[i] for i in range(n)}
         today = datetime.date.today()
         now = datetime.datetime.now().time()
         os.makedirs(f"result/{today}", exist_ok=True)
 
-        plt.figure(figsize=(10, 10))
+        fig, ax = plt.subplots(figsize=(10, 10))
+        ax.set_aspect("equal")
+
         plt.title("Stress Majorization (seed 0)")
-        nx.draw(G, pos=position, node_size=300, labels={i + 1: i for i in range(n)})
+        nx.draw(
+            G,
+            pos=position,
+            node_size=300,
+            labels={i + 1: i for i in range(n)},
+            edge_color=edge_colors,
+            ax=ax,
+        )
         plt.savefig(f"result/{today}/{now}.png")
 
     view()
