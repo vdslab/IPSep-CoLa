@@ -57,16 +57,7 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
         for a in range(2):
             Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
 
-            # blocks = NodeBlocks(Z[:, a].flatten())
-            # b = (Lz @ Z[:, a]).reshape(-1, 1)
-            # A = Lw
-            # constraints = Constraints(C["x" if a == 0 else "y"], n)
-            # delta_x = solve_QPSC(A, b, constraints, blocks)
-            # Z[:, a : a + 1] = delta_x.flatten()[:, None]
-
-        # for i in range(n - 1, -1, -1):
-        #     Z[i] -= Z[0]
-
+        # Z = sgd(Z, weight, dist)
         now_stress = new_stress
         new_stress = stress(Z, dist, weight)
         print("stress", now_stress, "->", new_stress)
@@ -76,8 +67,6 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
         iter -= 1
         Lz = z_laplacian(weight, dist, Z)
         for a in range(2):
-            # Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
-
             blocks = NodeBlocks(Z[:, a].flatten())
             b = (Lz @ Z[:, a]).reshape(-1, 1)
             A = Lw
@@ -96,6 +85,7 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
     while iter > 0:
         iter -= 1
         Lz = z_laplacian(weight, dist, Z)
+        # Z = sgd(Z, weight, dist)
         for a in range(2):
             Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
 
