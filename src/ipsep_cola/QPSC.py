@@ -1,15 +1,18 @@
 from collections import deque
 
 import numpy as np
-from block import NodeBlocks
-from constraint import Constraints
+from .block import NodeBlocks
+from .constraint import Constraints
 from numpy import ndarray
 
 lm = dict()
 
 
 def solve_QPSC(
-    A: ndarray, b: ndarray, constraints: Constraints, node_blocks: NodeBlocks
+    A: ndarray,
+    b: ndarray,
+    constraints: Constraints,
+    node_blocks: NodeBlocks,
 ):
     global lm
     print("solve_QPSC")
@@ -17,13 +20,15 @@ def solve_QPSC(
     x = np.copy(node_blocks.positions)
     x = x.reshape(-1, 1)
 
+
     iter = 30
-    while iter > 0:
-        iter -= 1
+
+    for i in range(iter):
         g = A @ x + b
         s = (g.T @ g) / (g.T @ A @ g)
         x_hat = np.copy(x)
         x = x_hat - s[0][0] * g
+
         no_split = split_blocks(x.flatten(), constraints, node_blocks)
         x_bar = project(constraints, node_blocks)
 
