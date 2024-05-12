@@ -2,12 +2,11 @@ import math
 
 import numpy as np
 import json
-from ipsep_cola.block import NodeBlocks
 from ipsep_cola.constraint import Constraints
-from ipsep_cola.QPSC import project
 import datetime
 import os
-
+from ipsep_cola.block import NodeBlocks
+from ipsep_cola.QPSC import project
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -96,6 +95,51 @@ def sgd_ipsepcola(Z, weight, dist):
         for j in range(i + 1, Z.shape[0]):
             ij.append((i, j))
     print(steps)
+
+    edge_colors = [
+        "red" if [i + 1, j + 1] or [j + 1, i + 1] in c_edges else "gray"
+        for i, j in links
+    ]
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.set_aspect("equal")
+
+    # def fig_update(k):
+    #     if k != 0:
+    #         plt.cla()
+
+    #     np.random.shuffle(ij)
+    #     for i, j in ij:
+    #         norm = np.linalg.norm(Z[i] - Z[j], ord=2)
+    #         if norm < 1e-4:
+    #             print(norm, dist[i][j])
+    #             exit()
+
+    #         r = (norm - dist[i][j]) * (Z[i] - Z[j]) / norm / 2
+
+    #         myu = weight[i][j] * steps[k]
+    #         myu = min(myu, 1)
+    #         Z[i] -= myu * r
+    #         Z[j] += myu * r
+
+    #     blocks = NodeBlocks(Z[:, 1].flatten())
+    #     y = project(constraints, blocks)
+    #     Z[:, 1:2] = y.flatten()[:, None]
+
+    #     plt.title(f"SGD ({k}) (seed 0)")
+
+    #     position = {i + 1: Z[i] for i in range(n)}
+    #     nx.draw(
+    #         G,
+    #         pos=position,
+    #         node_size=300,
+    #         labels={i + 1: i for i in range(n)},
+    #         edge_color=edge_colors,
+    #         ax=ax,
+    #     )
+
+    # ani = anm.FuncAnimation(fig, fig_update, frames=iter - 1, interval=100)
+    # ani.save("lposn_after_merge_update.gif")
+
     for eta in steps:
         np.random.shuffle(ij)
         for i, j in ij:
@@ -141,7 +185,7 @@ def sgd_y(Z, weight, dist):
 
 
 if __name__ == "__main__":
-    with open("./src/data/circle.json") as f:
+    with open("./src/data/no_cycle_tree.json") as f:
         data = json.load(f)
 
     nodes = [i + 1 for i in range(len(data["nodes"]))]
@@ -177,7 +221,7 @@ if __name__ == "__main__":
     np.random.seed(0)
     Z = np.random.rand(n, 2)
     Z[0] = [0, 0]
-    Z = sgd(Z, weight=weights, dist=dist)
+    Z = sgd_ipsepcola(Z, weight=weights, dist=dist)
 
     def view():
         G = nx.DiGraph()
