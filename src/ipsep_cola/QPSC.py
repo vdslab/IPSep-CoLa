@@ -1,8 +1,8 @@
 from collections import deque
 
 import numpy as np
-from .block import NodeBlocks
-from .constraint import Constraints
+from block import NodeBlocks
+from constraint import Constraints
 from numpy import ndarray
 
 lm = dict()
@@ -20,8 +20,7 @@ def solve_QPSC(
     x = np.copy(node_blocks.positions)
     x = x.reshape(-1, 1)
 
-
-    iter = 30
+    iter = 300
 
     for i in range(iter):
         g = A @ x + b
@@ -210,6 +209,7 @@ def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
     # Tips: LとRを合体させてしまってた
     c_left = constraints.left(c)
     c_right = constraints.right(c)
+    # 同じブロックのとき，制約をみたすためにrightに必要な距離
     d = offset[c_left] + constraints.gap(c) - offset[c_right]
 
     B[L].posn = (
