@@ -6,7 +6,7 @@
     "editor.wordBasedSuggestions": "off",
     "editor.codeActionsOnSave": {
       "source.fixAll": "always",
-      "source.organizeImports": "always"
+      "source.organizeImports": "never"
     }
   },
   "[json][jsonc]": {
@@ -15,5 +15,13 @@
     },
     "editor.suggest.insertMode": "replace",
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "[javascript][javascriptreact]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "always"
+    }
+  },
+  "eslint.workingDirectories": [{ "mode": "auto" }]
 }
