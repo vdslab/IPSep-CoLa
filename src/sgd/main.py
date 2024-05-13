@@ -9,15 +9,20 @@ from ipsep_cola.block import NodeBlocks
 from ipsep_cola.QPSC import project
 import matplotlib.pyplot as plt
 import networkx as nx
+import sys
 
 from networkx import floyd_warshall_numpy
 
 from majorization.main import weights_of_normalization_constant
 
 
+sys.setrecursionlimit(10000000)
+
+
 def sgd(Z, weight, dist):
     iter = 150
     eps = 0.1
+    n = Z.shape[0]
 
     wmin = np.amax(weight)
     for i in range(n):
@@ -54,10 +59,7 @@ def sgd(Z, weight, dist):
     return Z
 
 
-def sgd_ipsepcola(Z, weight, dist):
-    with open("./src/data/no_cycle_tree.json") as f:
-        data = json.load(f)
-
+def sgd_ipsepcola(Z, weight, dist, gap, data):
     nodes = [i for i in range(len(data["nodes"]))]
     n = len(nodes)
 
@@ -71,7 +73,7 @@ def sgd_ipsepcola(Z, weight, dist):
         left = c["left"]
         right = c["right"]
         axis = c["axis"]
-        C[axis].append([left, right, 20])
+        C[axis].append([left, right, gap])
 
     constraints = Constraints(C["y"], n)
 
@@ -81,10 +83,12 @@ def sgd_ipsepcola(Z, weight, dist):
     wmin = np.amax(weight)
     for i in range(n):
         for j in range(n):
-            if i != j:
-                wmin = min(wmin, weight[i][j])
+            if i == j:
+                continue
+            if weight[i][j] == 0:
+                continue
+            wmin = min(wmin, weight[i][j])
     eta_max = 1 / wmin
-    print(wmin)
     eta_min = eps / np.amax(weight)
     steps = [
         eta_max * math.exp(1 / (iter - 1) * math.log(eta_min / eta_max) * t)
@@ -96,10 +100,6 @@ def sgd_ipsepcola(Z, weight, dist):
             ij.append((i, j))
     print(steps)
 
-    edge_colors = [
-        "red" if [i + 1, j + 1] or [j + 1, i + 1] in c_edges else "gray"
-        for i, j in links
-    ]
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.set_aspect("equal")
 
@@ -150,7 +150,10 @@ def sgd_ipsepcola(Z, weight, dist):
 
             r = (norm - dist[i][j]) * (Z[i] - Z[j]) / norm / 2
 
-            myu = weight[i][j] * eta
+            if weight[i][j] == 0:
+                myu = eta
+            else:
+                myu = weight[i][j] * eta
             myu = min(myu, 1)
             Z[i] -= myu * r
             Z[j] += myu * r
@@ -184,8 +187,9 @@ def sgd_y(Z, weight, dist):
     return Z
 
 
-if __name__ == "__main__":
-    with open("./src/data/no_cycle_tree.json") as f:
+def plot_sgd(file, save_dir):
+    base_name = os.path.splitext(os.path.basename(file))[0]
+    with open(file) as f:
         data = json.load(f)
 
     nodes = [i + 1 for i in range(len(data["nodes"]))]
@@ -208,7 +212,9 @@ if __name__ == "__main__":
     for link in links:
         G.add_edge(*link)
     dist = floyd_warshall_numpy(G)
-    dist *= 40
+    edge_length = 20
+    gap = 25
+    dist *= edge_length
 
     # 座標の初期値はランダム
     Z = np.random.rand(n, 2)
@@ -221,7 +227,7 @@ if __name__ == "__main__":
     np.random.seed(0)
     Z = np.random.rand(n, 2)
     Z[0] = [0, 0]
-    Z = sgd_ipsepcola(Z, weight=weights, dist=dist)
+    Z = sgd_ipsepcola(Z, weight=weights, dist=dist, gap=gap, data=data)
 
     def view():
         G = nx.DiGraph()
@@ -243,7 +249,7 @@ if __name__ == "__main__":
         fig, ax = plt.subplots(figsize=(10, 10))
         ax.set_aspect("equal")
 
-        plt.title("Stress Majorization (seed 0)")
+        plt.title(f"SGD (seed 0) {edge_length=} {gap=}")
         nx.draw(
             G,
             pos=position,
@@ -252,6 +258,22 @@ if __name__ == "__main__":
             edge_color=edge_colors,
             ax=ax,
         )
-        plt.savefig(f"result/{today}/{now}.png")
+        plt.savefig(f"{save_dir}/{base_name}.png")
 
     view()
+
+
+import glob
+
+if __name__ == "__main__":
+    print(glob.glob("src/data/*.json"))
+
+    for file in glob.glob("src/data/*_10.json"):
+        print(file)
+        today = datetime.date.today()
+        now = datetime.datetime.now().time()
+        save_dir = f"result/SGD/n10/{today}"
+        os.makedirs(save_dir, exist_ok=True)
+
+        plot_sgd(file, save_dir)
+        print(file, "done")
