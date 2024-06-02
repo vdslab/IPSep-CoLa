@@ -16,6 +16,8 @@ from majorization.main import (
 from networkx import floyd_warshall_numpy
 from QPSC import solve_QPSC
 from scipy.sparse.linalg import cg
+import time
+
 
 lm = dict()
 
@@ -27,10 +29,6 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
     """
 
     n = len(graph.nodes)
-
-    sigmas = [[0] * n] * n
-    for i, j in graph.edges:
-        sigmas[i][j] = 1
 
     dist = floyd_warshall_numpy(graph)
     dist *= edge_length
@@ -50,7 +48,10 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
     def delta_stress(now, new):
         return abs(now - new) / now
 
-    iter = 30
+    s = []
+    times = []
+
+    iter = 100
     while iter > 0:
         iter -= 1
         Lz = z_laplacian(weight, dist, Z)
@@ -60,9 +61,11 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
         # Z = sgd(Z, weight, dist)
         now_stress = new_stress
         new_stress = stress(Z, dist, weight)
-        print("stress", now_stress, "->", new_stress)
+        s.append(now_stress)
+        times.append(time.time())
+        # print("stress", now_stress, "->", new_stress)
 
-    iter = 20
+    iter = 100
     while iter > 0:
         iter -= 1
         Lz = z_laplacian(weight, dist, Z)
@@ -79,9 +82,11 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
 
         now_stress = new_stress
         new_stress = stress(Z, dist, weight)
-        print("stress", now_stress, "->", new_stress)
+        s.append(now_stress)
+        times.append(time.time())
+        # print("stress", now_stress, "->", new_stress)
 
-    iter = 20
+    iter = 100
     while iter > 0:
         iter -= 1
         Lz = z_laplacian(weight, dist, Z)
@@ -101,9 +106,11 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
 
         now_stress = new_stress
         new_stress = stress(Z, dist, weight)
-        print("stress", now_stress, "->", new_stress)
+        s.append(now_stress)
+        times.append(time.time())
+        # print("stress", now_stress, "->", new_stress)
 
-    return Z
+    return Z, s, times
 
 
 if __name__ == "__main__":
@@ -158,14 +165,25 @@ if __name__ == "__main__":
             left = c["left"]
             right = c["right"]
             axis = c["axis"]
-            C[axis].append([left, right, 10])
-        Z = IPSep_CoLa(G, C, edge_length=20.0)
+            C[axis].append([left, right, 30])
+        Z, stresses, times = IPSep_CoLa(G, C, edge_length=20.0)
+        weight = weights_of_normalization_constant(2, dist)
+        stress(Z, dist, weight)
+        print(stresses)
+
         view(Z, "IPSep_Cola (seed 0) gap=30, edge_length=20.0")
+
+        fig, ax = plt.subplots()
+        ax.plot(stresses)
+        ax.set_yscale("log")
+        plt.savefig(f"{dir}/stress.png")
+        plt.close()
 
     def mutiple():
         gaps = np.arange(10, 51, 10)
         edge_lengths = np.arange(10.0, 51.0, 10.0)
         # edge_lengths = [20.0]
+
         for gap in gaps:
             for edge_length in edge_lengths:
                 C: dict[str, list] = dict()
@@ -177,7 +195,8 @@ if __name__ == "__main__":
                     axis = c["axis"]
                     C[axis].append([left, right, gap])
 
-                Z = IPSep_CoLa(G, C, edge_length=edge_length)
+                Z, stresse, times = IPSep_CoLa(G, C, edge_length=edge_length)
+
                 view(
                     Z,
                     f"IPSep_Cola (seed 0) base{gap}, {edge_length=}",
