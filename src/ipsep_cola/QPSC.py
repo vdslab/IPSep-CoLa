@@ -4,6 +4,7 @@ import numpy as np
 from block import NodeBlocks
 from constraint import Constraints
 from numpy import ndarray
+from comp_dfdv import comp_dfdv
 
 lm = dict()
 
@@ -15,12 +16,12 @@ def solve_QPSC(
     node_blocks: NodeBlocks,
 ):
     global lm
-    print("solve_QPSC")
+    # print("solve_QPSC")
     lm = dict()
     x = np.copy(node_blocks.positions)
     x = x.reshape(-1, 1)
 
-    iter = 300
+    iter = 30
 
     for i in range(iter):
         g = A @ x + b
@@ -37,9 +38,12 @@ def solve_QPSC(
         x = x_hat + alpha * d
         node_blocks.positions = x.flatten()
 
-        norm = np.linalg.norm(x - x_hat, ord=2)
-        if norm < 1e-4 and no_split:
-            break
+        try:
+            norm = np.linalg.norm(x - x_hat, ord=2)
+            if norm < 1e-4 and no_split:
+                break
+        except np.linalg.LinAlgError as e:
+            print(e)
 
     return x
 
@@ -66,8 +70,11 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
 
         v = b.vars.pop()
         b.vars.add(v)
+        sub_lm = comp_dfdv(v, AC, None, constraints, node_blocks)
+        for key, value in sub_lm.items():
+            lm.setdefault(key, 0)
+            lm[key] = value
 
-        comp_dfdv(v, AC, None, constraints, node_blocks)
         AC_list = list(AC)
         sc = AC_list[np.argmin([lm[c] for c in AC_list])]
         if lm[sc] >= 0:
@@ -109,31 +116,6 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
         node_blocks.B[s].active = AC.difference(b.active)
 
     return no_split
-
-
-def comp_dfdv(v, AC, u, constraints: Constraints, node_blocks: NodeBlocks):
-    """
-    - https://doi.org/10.1007/11618058_15
-    O(n log n) ?
-    """
-    global lm
-    x = node_blocks.positions
-
-    dfdv = node_blocks.posn(v) - x[v]
-    for c in AC:
-        c_left = constraints.left(c)
-        c_right = constraints.right(c)
-        if not (v == c_left and u != c_right):
-            continue
-        lm[c] = comp_dfdv(c_right, AC, v, constraints, node_blocks)
-        dfdv += lm[c]
-    for c in AC:
-        if not (v == c_right and u != c_left):
-            continue
-        lm[c] = -comp_dfdv(c_left, AC, v, constraints, node_blocks)
-        dfdv -= lm[c]
-
-    return dfdv
 
 
 def connected(s, AC, constraints: Constraints):
@@ -244,7 +226,10 @@ def expand_block(b, c_tilde, constraints: Constraints, node_blocks: NodeBlocks):
 
     c_tilde_left = constraints.left(c_tilde)
 
-    comp_dfdv(c_tilde_left, AC, None, constraints, node_blocks)
+    sub_lm: dict = comp_dfdv(c_tilde_left, AC, None, constraints, node_blocks)
+    for key, value in sub_lm.items():
+        lm.setdefault(key, 0)
+        lm[key] = value
 
     c_tilde_right = constraints.right(c_tilde)
     v = comp_path(c_tilde_left, c_tilde_right, AC, constraints)
@@ -266,7 +251,7 @@ def expand_block(b, c_tilde, constraints: Constraints, node_blocks: NodeBlocks):
     for v in connected(c_tilde_right, AC, constraints):
         offset[v] += max(0.0001, violation(c_tilde, constraints, node_blocks))
     AC.add(c_tilde)
-    # B[b].active = AC
+    B[b].active = AC
     B[b].posn = (
         sum([x[j] - offset[j] for j in B[b].vars]) / B[b].nvars
         if B[b].nvars != 0
