@@ -5,8 +5,8 @@ import os
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from block import NodeBlocks
-from constraint import Constraints
+from .block import NodeBlocks
+from .constraint import Constraints
 from majorization.main import (
     stress,
     weight_laplacian,
@@ -14,12 +14,85 @@ from majorization.main import (
     z_laplacian,
 )
 from networkx import floyd_warshall_numpy
-from QPSC import solve_QPSC
+from .QPSC import solve_QPSC
 from scipy.sparse.linalg import cg
 import time
-
+from util.graph import get_graph_and_constraints, init_positions
+from util.constraint import get_constraints_dict
 
 lm = dict()
+
+
+def run_IPSep_CoLa(
+    file_path: str,
+    edge_length: float,
+    gap: int,
+    unconstrainedIter: int,
+    customConstrainedIter: int,
+    allIter: int,
+):
+    graph, constraints_data = get_graph_and_constraints(file_path)
+    dist = floyd_warshall_numpy(graph)
+    dist *= edge_length
+    Z = init_positions(graph, 2, 0)
+    weights = weights_of_normalization_constant(2, dist)
+    C = get_constraints_dict(constraints_data, default_gap=gap)
+    constraints = Constraints(C["y"], Z.shape[0])
+
+    Lw = weight_laplacian(weights)
+    n = len(graph.nodes)
+
+    stresses = []
+    times = []
+    start = time.time()
+    st = time.perf_counter()
+    for i in range(unconstrainedIter):
+        Lz = z_laplacian(weights, dist, Z)
+        for a in range(2):
+            Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
+
+        stresses.append(stress(Z, dist, weights))
+        times.append(time.time() - start)
+
+    print(time.perf_counter())
+    for i in range(customConstrainedIter):
+        Lz = z_laplacian(weights, dist, Z)
+        for a in range(2):
+            blocks = NodeBlocks(Z[:, a].flatten())
+            b = (Lz @ Z[:, a]).reshape(-1, 1)
+            A = Lw
+            constraints = Constraints(C["x" if a == 0 else "y"], n)
+            delta_x = solve_QPSC(A, b, constraints, blocks)
+            Z[:, a : a + 1] = delta_x.flatten()[:, None]
+
+        for i in range(n - 1, -1, -1):
+            Z[i] -= Z[0]
+
+        stresses.append(stress(Z, dist, weights))
+        times.append(time.time() - start)
+
+    print(time.perf_counter())
+    for i in range(allIter):
+        Lz = z_laplacian(weights, dist, Z)
+        # Z = sgd(Z, weight, dist)
+        for a in range(2):
+            Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
+
+            blocks = NodeBlocks(Z[:, a].flatten())
+            b = (Lz @ Z[:, a]).reshape(-1, 1)
+            A = Lw
+            constraints = Constraints(C["x" if a == 0 else "y"], n)
+            delta_x = solve_QPSC(A, b, constraints, blocks)
+            Z[:, a : a + 1] = delta_x.flatten()[:, None]
+
+        for i in range(n - 1, -1, -1):
+            Z[i] -= Z[0]
+
+        stresses.append(stress(Z, dist, weights))
+        times.append(time.time() - start)
+    end = time.perf_counter()
+    print(f"elapsed_time: {end - st}")
+    return Z, stresses, times
 
 
 def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
@@ -50,8 +123,9 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
 
     s = []
     times = []
+    start = time.time()
 
-    iter = 100
+    iter = 10
     while iter > 0:
         iter -= 1
         Lz = z_laplacian(weight, dist, Z)
@@ -62,10 +136,10 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
         now_stress = new_stress
         new_stress = stress(Z, dist, weight)
         s.append(now_stress)
-        times.append(time.time())
+        times.append(time.time() - start)
         # print("stress", now_stress, "->", new_stress)
 
-    iter = 100
+    iter = 10
     while iter > 0:
         iter -= 1
         Lz = z_laplacian(weight, dist, Z)
@@ -83,10 +157,10 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
         now_stress = new_stress
         new_stress = stress(Z, dist, weight)
         s.append(now_stress)
-        times.append(time.time())
+        times.append(time.time() - start)
         # print("stress", now_stress, "->", new_stress)
 
-    iter = 100
+    iter = 10
     while iter > 0:
         iter -= 1
         Lz = z_laplacian(weight, dist, Z)
@@ -107,7 +181,7 @@ def IPSep_CoLa(graph: nx.Graph, C: dict[str, list], edge_length: float = 20.0):
         now_stress = new_stress
         new_stress = stress(Z, dist, weight)
         s.append(now_stress)
-        times.append(time.time())
+        times.append(time.time() - start)
         # print("stress", now_stress, "->", new_stress)
 
     return Z, s, times
@@ -166,7 +240,10 @@ if __name__ == "__main__":
             right = c["right"]
             axis = c["axis"]
             C[axis].append([left, right, 30])
-        Z, stresses, times = IPSep_CoLa(G, C, edge_length=20.0)
+        # Z, stresses, times = IPSep_CoLa(G, C, edge_length=20.0)
+        Z, stresses, times = run_IPSep_CoLa(
+            "./src/data/no_cycle_tree.json", 20, 30, 50, 0, 0
+        )
         weight = weights_of_normalization_constant(2, dist)
         stress(Z, dist, weight)
         print(stresses)
@@ -202,5 +279,5 @@ if __name__ == "__main__":
                     f"IPSep_Cola (seed 0) base{gap}, {edge_length=}",
                 )
 
-    # once()
-    mutiple()
+    once()
+    # mutiple()

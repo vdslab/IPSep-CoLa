@@ -1,10 +1,10 @@
 from collections import deque
 
 import numpy as np
-from block import NodeBlocks
-from constraint import Constraints
+from .block import NodeBlocks
+from .constraint import Constraints
 from numpy import ndarray
-from comp_dfdv import comp_dfdv
+from .comp_dfdv import comp_dfdv
 
 lm = dict()
 
