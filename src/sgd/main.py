@@ -2,61 +2,16 @@ import math
 
 import numpy as np
 import json
-from ipsep_cola.constraint import Constraints
+from ipsep_cola import Constraints, NodeBlocks, project
 import datetime
 import os
-from ipsep_cola.block import NodeBlocks
 import matplotlib.pyplot as plt
 import networkx as nx
-import sys
 import time
-from ipsep_cola.QPSC import project
 
 from networkx import floyd_warshall_numpy
 
 from majorization.main import weights_of_normalization_constant, stress
-
-sys.setrecursionlimit(10000000)
-
-
-def sgd(Z, weight, dist):
-    iter = 500
-    eps = 0.1
-    n = Z.shape[0]
-
-    wmin = np.amax(weight)
-    for i in range(n):
-        for j in range(n):
-            if i != j:
-                wmin = min(wmin, weight[i][j])
-
-    eta_max = 1 / wmin
-    eta_min = eps / np.amax(weight)
-    steps = [
-        eta_max * math.exp(1 / (iter - 1) * math.log(eta_min / eta_max) * t)
-        for t in range(iter)
-    ]
-    ij = []
-    for i in range(Z.shape[0]):
-        for j in range(i + 1, Z.shape[0]):
-            ij.append((i, j))
-
-    for eta in steps:
-        np.random.shuffle(ij)
-        for i, j in ij:
-            norm = np.linalg.norm(Z[i] - Z[j], ord=2)
-            if norm < 1e-4:
-                print(norm, dist[i][j])
-                exit()
-
-            r = (norm - dist[i][j]) * (Z[i] - Z[j]) / norm / 2
-
-            myu = weight[i][j] * eta
-            myu = min(myu, 1)
-            Z[i] -= myu * r
-            Z[j] += myu * r
-
-    return Z
 
 
 def sgd_ipsepcola(Z, weight, dist, gap, data):
@@ -82,8 +37,8 @@ def sgd_ipsepcola(Z, weight, dist, gap, data):
     constraints = Constraints(C["y"], n)
 
     lam = 1
-    iter = 300
-    eps = 0.1
+    iter = 30
+    eps = 0.001
     wmin = np.amax(weight)
     for i in range(n):
         for j in range(n):
@@ -145,6 +100,7 @@ def sgd_ipsepcola(Z, weight, dist, gap, data):
 
     stresses = []
     times = []
+    start_time = time.time()
     for eta in steps:
         np.random.shuffle(ij)
         for i, j in ij:
@@ -168,7 +124,7 @@ def sgd_ipsepcola(Z, weight, dist, gap, data):
         # y = sgd_project(Z[:, 1].flatten(), constraint_graph)
         Z[:, 1:2] = y.flatten()[:, None]
         stresses.append(stress(Z, dist, weight))
-        times.append(time.time())
+        times.append(time.time() - start_time)
 
     return Z, stresses, times
 
@@ -300,28 +256,6 @@ def sgd_ipsepcola(Z, weight, dist, gap, data):
 #     return x
 
 
-def sgd_y(Z, weight, dist):
-    eta_max = 1 / np.amax(weight)
-    lam = 1
-    iter = 15
-    steps = [eta_max * math.exp(-lam * t) for t in range(iter)]
-    ij = []
-    for i in range(Z.shape[0]):
-        for j in range(i + 1, Z.shape[0]):
-            ij.append((i, j))
-    for eta in steps:
-        np.random.shuffle(ij)
-        for i, j in ij:
-            norm = np.linalg.norm(Z[i] - Z[j], ord=2)
-            r = (norm - dist[i][j]) * (Z[i] - Z[j]) / norm
-
-            myu = weight[i][j] * eta
-            Z[i] -= myu * r
-            Z[j] += myu * r
-
-    return Z
-
-
 def plot_sgd(file, save_dir, edge_length, gap):
     base_name = os.path.splitext(os.path.basename(file))[0]
     with open(file) as f:
@@ -397,6 +331,113 @@ def plot_sgd(file, save_dir, edge_length, gap):
     view()
 
     return stresses, times
+
+
+def get_graph_and_constraints(file):
+    with open(file) as f:
+        data = json.load(f)
+
+    links = [[d["source"] + 1, d["target"] + 1] for d in data["links"]]
+    constraints = data["constraints"]
+    G = nx.Graph(links)
+
+    return G, constraints
+
+
+def init_positions(G: nx.Graph, dim, seed):
+    n = G.number_of_nodes()
+    np.random.seed(seed)
+    Z = np.random.rand(n, dim)
+    Z[0] = [0 for _ in range(dim)]
+    return Z
+
+
+def get_constraints_dict(constraints, *, default_gap=20):
+    C: dict[str, list] = dict()
+    C["y"] = []
+    C["x"] = []
+    for c in constraints:
+        left = c["left"]
+        right = c["right"]
+        axis = c["axis"]
+        # gap = c["gap"]
+        C[axis].append([left, right, default_gap])
+    return C
+
+
+def get_eta_steps(n, weight, iter, eps):
+    wmin = np.amax(weight)
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            if weight[i][j] == 0:
+                continue
+            wmin = min(wmin, weight[i][j])
+    eta_max = 1 / wmin
+    eta_min = eps / np.amax(weight)
+    steps = [
+        eta_max * math.exp(1 / (iter - 1) * math.log(eta_min / eta_max) * t)
+        for t in range(iter)
+    ]
+    return steps
+
+
+def sgd_with_project(file_path, edge_length, gap, iter_count, eps):
+    """
+    # Returns
+    Z: ndarray
+        - The positions of the nodes.
+
+    stresses: list[float]
+        - The stress of the positions at each iteration.
+
+    times: list[float]
+        - The time taken to compute the positions at each iteration.
+    """
+
+    graph, constraints_data = get_graph_and_constraints(file_path)
+    dist = floyd_warshall_numpy(graph)
+    dist *= edge_length
+    Z = init_positions(graph, 2, 0)
+    weights = weights_of_normalization_constant(2, dist)
+    C = get_constraints_dict(constraints_data, default_gap=gap)
+    constraints = Constraints(C["y"], Z.shape[0])
+    steps = get_eta_steps(Z.shape[0], weights, iter_count, eps)
+
+    ij = []
+    for i in range(Z.shape[0]):
+        for j in range(i + 1, Z.shape[0]):
+            ij.append((i, j))
+
+    stresses = []
+    times = []
+    start_time = time.time()
+    for eta in steps:
+        np.random.shuffle(ij)
+        for i, j in ij:
+            norm = np.linalg.norm(Z[i] - Z[j], ord=2)
+            if norm < 1e-4:
+                print(norm, dist[i][j])
+                exit()
+
+            r = (norm - dist[i][j]) * (Z[i] - Z[j]) / norm / 2
+
+            if weights[i][j] == 0:
+                myu = eta
+            else:
+                myu = weights[i][j] * eta
+            myu = min(myu, 1)
+            Z[i] -= myu * r
+            Z[j] += myu * r
+
+        blocks = NodeBlocks(Z[:, 1].flatten())
+        y = project(constraints, blocks)
+        Z[:, 1:2] = y.flatten()[:, None]
+        stresses.append(stress(Z, dist, weights))
+        times.append(time.time() - start_time)
+
+    return Z, stresses, times
 
 
 import glob
