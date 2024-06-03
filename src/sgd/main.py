@@ -12,6 +12,8 @@ import time
 from networkx import floyd_warshall_numpy
 
 from majorization.main import weights_of_normalization_constant, stress
+from util.graph import get_graph_and_constraints, init_positions
+from util.constraint import get_constraints_dict
 
 
 def sgd_ipsepcola(Z, weight, dist, gap, data):
@@ -331,38 +333,6 @@ def plot_sgd(file, save_dir, edge_length, gap):
     view()
 
     return stresses, times
-
-
-def get_graph_and_constraints(file):
-    with open(file) as f:
-        data = json.load(f)
-
-    links = [[d["source"] + 1, d["target"] + 1] for d in data["links"]]
-    constraints = data["constraints"]
-    G = nx.Graph(links)
-
-    return G, constraints
-
-
-def init_positions(G: nx.Graph, dim, seed):
-    n = G.number_of_nodes()
-    np.random.seed(seed)
-    Z = np.random.rand(n, dim)
-    Z[0] = [0 for _ in range(dim)]
-    return Z
-
-
-def get_constraints_dict(constraints, *, default_gap=20):
-    C: dict[str, list] = dict()
-    C["y"] = []
-    C["x"] = []
-    for c in constraints:
-        left = c["left"]
-        right = c["right"]
-        axis = c["axis"]
-        # gap = c["gap"]
-        C[axis].append([left, right, default_gap])
-    return C
 
 
 def get_eta_steps(n, weight, iter, eps):
