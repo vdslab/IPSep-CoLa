@@ -12,7 +12,7 @@ import time
 from networkx import floyd_warshall_numpy
 
 from majorization.main import weights_of_normalization_constant, stress
-from util.graph import get_graph_and_constraints, init_positions
+from util.graph import get_graph_and_constraints, init_positions, plot_graph
 from util.constraint import get_constraints_dict
 
 
@@ -383,15 +383,12 @@ def sgd_with_project(file_path, edge_length, gap, iter_count, eps):
     stresses = []
     times = []
     start_time = time.time()
-    for eta in steps:
-        np.random.shuffle(ij)
+
+    def move(eta):
         for i, j in ij:
             norm = np.linalg.norm(Z[i] - Z[j], ord=2)
-            if norm < 1e-4:
-                print(norm, dist[i][j])
-                exit()
 
-            r = (norm - dist[i][j]) * (Z[i] - Z[j]) / norm / 2
+            r = (norm - dist[i][j]) * (Z[i] - Z[j]) / norm / 2 if norm > 1e-4 else 0
 
             if weights[i][j] == 0:
                 myu = eta
@@ -404,6 +401,10 @@ def sgd_with_project(file_path, edge_length, gap, iter_count, eps):
         blocks = NodeBlocks(Z[:, 1].flatten())
         y = project(constraints, blocks)
         Z[:, 1:2] = y.flatten()[:, None]
+
+    for eta in steps:
+        np.random.shuffle(ij)
+        move(eta)
         stresses.append(stress(Z, dist, weights))
         times.append(time.time() - start_time)
 
@@ -419,12 +420,15 @@ if __name__ == "__main__":
     edge_lengths = np.arange(10.0, 51.0, 10.0)
     today = datetime.date.today()
     now = datetime.datetime.now()
-    save_dir = f"result/SGD/edge_gap/{today}/{now}"
+    save_dir = f"result/SGD/{today}/{now}"
     os.makedirs(save_dir, exist_ok=True)
 
-    for gap in gaps:
-        for edge_length in edge_lengths:
-            plot_sgd("./src/data/no_cycle_tree.json", save_dir, gap, edge_length)
+    # for gap in gaps:
+    #     for edge_length in edge_lengths:
+    #         plot_sgd("./src/data/no_cycle_tree.json", save_dir, gap, edge_length)
+    Z, _, _ = sgd_with_project("./src/data/no_cycle_tree.json", 20, 20, 150, 0.01)
+    graph = get_graph_and_constraints("./src/data/no_cycle_tree.json")[0]
+    plot_graph(graph, Z, save_dir, "no_cycle_tree.png")
     # print(edge_length, gap, "done")
 
     # for file in glob.glob("src/data/*_100.json"):
