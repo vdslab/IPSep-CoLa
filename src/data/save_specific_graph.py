@@ -16,7 +16,7 @@ def indicate_graph(graph: nx.Graph) -> nx.Graph:
 
 
 def save_json(graph: nx.Graph, name):
-    graph = graph.to_directed()
+    graph = nx.DiGraph(graph.edges)
     nodes = [{"id": i, "name": i} for i in graph.nodes]
     links = [{"source": i, "target": j} for i, j in graph.edges]
 
@@ -29,15 +29,13 @@ def save_json(graph: nx.Graph, name):
         if len(have_weight_edges)
         else 20
     )
+
     node_comp = dict()
-    for i, comp in enumerate(nx.strongly_connected_components(graph)):
+    comps = list(nx.strongly_connected_components(graph))
+    for i, comp in enumerate(comps):
         for node in comp:
             node_comp[node] = i
 
-    # constraints = [
-    #     {"axis": "y", "left": i, "right": j, "gap": d.get("weight", gap_ave)}
-    #     for i, j, d in edges
-    # ]
     constraints = []
     for i, j in graph.edges:
         u = node_comp[i]
