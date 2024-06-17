@@ -1,9 +1,9 @@
 import json
+import os
+
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-
-import os
-import matplotlib.pyplot as plt
 
 
 def get_graph_and_constraints(file):
@@ -27,9 +27,10 @@ def get_graph_and_constraints(file):
     return G, constraints
 
 
-def init_positions(G: nx.Graph, dim, seed):
+def init_positions(G: nx.Graph, dim, seed=None):
     n = G.number_of_nodes()
-    np.random.seed(seed)
+    if seed is not None:
+        np.random.seed(seed)
     Z = np.random.rand(n, dim)
     Z[0] = [0 for _ in range(dim)]
     return Z
@@ -41,6 +42,13 @@ def plot_graph(G: nx.Graph, Z, save_dir, file_name="graph.png"):
 
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.set_aspect("equal")
-    nx.draw(G, with_labels=True, pos=position)
+    nx.draw(
+        G,
+        # with_labels=True,
+        pos=position,
+        node_shape="o",
+        node_size=50,
+        ax=ax,
+    )
     plt.savefig(os.path.join(save_dir, file_name))
     plt.close()
