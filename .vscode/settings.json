@@ -6,9 +6,10 @@
     "editor.wordBasedSuggestions": "off",
     "editor.codeActionsOnSave": {
       "source.fixAll": "always",
-      "source.organizeImports": "never"
+      "source.organizeImports": "explicit"
     }
   },
+  "ruff.lint.args": ["--ignore=F401"],
   "[json][jsonc]": {
     "editor.quickSuggestions": {
       "strings": true
