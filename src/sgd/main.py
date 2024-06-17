@@ -5,10 +5,10 @@ import os
 import time
 
 import numpy as np
-from ipsep_cola import Constraints, NodeBlocks, project
+from ipsep_cola import NodeBlocks, project
 from majorization.main import stress, weights_of_normalization_constant
 from networkx import floyd_warshall_numpy
-from util.constraint import get_constraints_dict
+from util.constraint import Constraints, get_constraints_dict
 from util.graph import get_graph_and_constraints, init_positions, plot_graph
 
 
@@ -81,6 +81,7 @@ def sgd_with_project(file_path, edge_length, gap, iter_count, eps):
         Z[:, 1:2] = y.flatten()[:, None]
 
     for eta in steps:
+        print(eta)
         np.random.shuffle(ij)
         move(eta)
         stresses.append(stress(Z, dist, weights))

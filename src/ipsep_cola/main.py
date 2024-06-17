@@ -1,12 +1,11 @@
 import datetime
 import json
 import os
+import time
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from .block import NodeBlocks
-from .constraint import Constraints
 from majorization.main import (
     stress,
     weight_laplacian,
@@ -14,11 +13,12 @@ from majorization.main import (
     z_laplacian,
 )
 from networkx import floyd_warshall_numpy
-from .QPSC import solve_QPSC
 from scipy.sparse.linalg import cg
-import time
+from util.constraint import Constraints, get_constraints_dict
 from util.graph import get_graph_and_constraints, init_positions
-from util.constraint import get_constraints_dict
+
+from .block import NodeBlocks
+from .QPSC import solve_QPSC
 
 lm = dict()
 
@@ -28,7 +28,6 @@ def run_IPSep_CoLa(
     edge_length: float,
     gap: int,
     unconstrainedIter: int,
-    customConstrainedIter: int,
     allIter: int,
 ):
     graph, constraints_data = get_graph_and_constraints(file_path)
@@ -42,51 +41,55 @@ def run_IPSep_CoLa(
     Lw = weight_laplacian(weights)
     n = len(graph.nodes)
 
+    eps = 0.01
+    now_stress = stress(Z, dist, weights)
+    new_stress = 0.5 * now_stress
+
+    def delta_stress(now, new):
+        return (now - new) / now
+
     stresses = []
     times = []
     start = time.time()
     st = time.perf_counter()
     for i in range(unconstrainedIter):
         Lz = z_laplacian(weights, dist, Z)
-        for a in range(2):
-            Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
-
-        stresses.append(stress(Z, dist, weights))
+        try:
+            for a in range(2):
+                Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
+        except np.linalg.LinAlgError as e:
+            print(e)
+            break
+        new_stress = stress(Z, dist, weights)
+        print(f"{now_stress=} -> {new_stress=}")
+        print(delta_stress(now_stress, new_stress))
+        if delta_stress(now_stress, new_stress) < eps:
+            break
+        now_stress = new_stress
+        stresses.append(now_stress)
         times.append(time.time() - start)
 
     print(time.perf_counter())
-    for i in range(customConstrainedIter):
-        Lz = z_laplacian(weights, dist, Z)
-        for a in range(2):
-            blocks = NodeBlocks(Z[:, a].flatten())
-            b = (Lz @ Z[:, a]).reshape(-1, 1)
-            A = Lw
-            constraints = Constraints(C["x" if a == 0 else "y"], n)
-            delta_x = solve_QPSC(A, b, constraints, blocks)
-            Z[:, a : a + 1] = delta_x.flatten()[:, None]
 
-        for i in range(n - 1, -1, -1):
-            Z[i] -= Z[0]
-
-        stresses.append(stress(Z, dist, weights))
-        times.append(time.time() - start)
-
-    print(time.perf_counter())
     for i in range(allIter):
         Lz = z_laplacian(weights, dist, Z)
         # Z = sgd(Z, weight, dist)
-        for a in range(2):
-            Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
+        try:
+            for a in range(2):
+                Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
 
-            blocks = NodeBlocks(Z[:, a].flatten())
-            b = (Lz @ Z[:, a]).reshape(-1, 1)
-            A = Lw
-            constraints = Constraints(C["x" if a == 0 else "y"], n)
-            delta_x = solve_QPSC(A, b, constraints, blocks)
-            Z[:, a : a + 1] = delta_x.flatten()[:, None]
+                blocks = NodeBlocks(Z[:, a].flatten())
+                b = (Lz @ Z[:, a]).reshape(-1, 1)
+                A = Lw
+                constraints = Constraints(C["x" if a == 0 else "y"], n)
+                delta_x = solve_QPSC(A, b, constraints, blocks)
+                Z[:, a : a + 1] = delta_x.flatten()[:, None]
 
-        for i in range(n - 1, -1, -1):
-            Z[i] -= Z[0]
+            for i in range(n - 1, -1, -1):
+                Z[i] -= Z[0]
+        except np.linalg.LinAlgError as e:
+            print(e)
+            break
 
         stresses.append(stress(Z, dist, weights))
         times.append(time.time() - start)

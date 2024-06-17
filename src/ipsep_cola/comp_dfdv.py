@@ -1,7 +1,7 @@
 import networkx as nx
+from util.constraint.constraint import Constraints
 
 from .block import NodeBlocks
-from .constraint import Constraints
 
 
 def make_ditree(root, graph: nx.Graph):

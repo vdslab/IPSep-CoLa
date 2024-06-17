@@ -1,9 +1,10 @@
 from collections import deque
 
 import numpy as np
-from .block import NodeBlocks
-from .constraint import Constraints
 from numpy import ndarray
+from util.constraint import Constraints
+
+from .block import NodeBlocks
 from .comp_dfdv import comp_dfdv
 
 lm = dict()
@@ -31,6 +32,7 @@ def solve_QPSC(
 
         no_split = split_blocks(x.flatten(), constraints, node_blocks)
         x_bar = project(constraints, node_blocks)
+        x_bar = x
 
         d = x_bar - x_hat
         divede = d.T @ A @ d
