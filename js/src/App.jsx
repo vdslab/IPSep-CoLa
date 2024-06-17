@@ -35,7 +35,8 @@ function App() {
     d3cola
       .nodes(graph?.nodes)
       .links(graph?.links)
-      .constraints(graph?.constraints)
+      // .constraints(graph?.constraints)
+      .flowLayout("y", 30)
       .size([width, height])
       .symmetricDiffLinkLengths(20)
       .start(10, 15, 20, 15, false, true);
@@ -59,58 +60,35 @@ function App() {
   return (
     <>
       <select onChange={handleSelectChange} defaultValue={"no_cycle_tree"}>
-        <option value="no_cycle_tree">tree</option>
-        <option value="w">w</option>
-        <option value="gnp_random_10">gnp_random_10</option>
-        <option value="gnp_random_50">gnp_random_50</option>
-        <option value="gnp_random_100">gnp_random_100</option>
-        <option value="gnp_random_150">gnp_random_150</option>
-        <option value="gnp_random_200">gnp_random_200</option>
-        <option value="gnp_random_all_constraints_10">
-          gnp_random_all_constraints_10
-        </option>
-        <option value="gnp_random_all_constraints_50">
-          gnp_random_all_constraints_50
-        </option>
-        <option value="gnp_random_all_constraints_100">
-          gnp_random_all_constraints_100
-        </option>
-        <option value="gnp_random_all_constraints_150">
-          gnp_random_all_constraints_150
-        </option>
-        <option value="gnp_random_all_constraints_200">
-          gnp_random_all_constraints_200
-        </option>
-        <option value="gnp_random_all_constraints_250">
-          gnp_random_all_constraints_250
-        </option>
-        <option value="gnp_random_all_constraints_300">
-          gnp_random_all_constraints_300
-        </option>
-        <option value="gnp_random_all_constraints_350">
-          gnp_random_all_constraints_350
-        </option>
-        <option value="gnp_random_all_constraints_400">
-          gnp_random_all_constraints_400
-        </option>
-        <option value="gnp_random_all_constraints_450">
-          gnp_random_all_constraints_450
-        </option>
-        <option value="gnp_random_all_constraints_500">
-          gnp_random_all_constraints_500
-        </option>
-        <option value="random_tree_10">random_tree_10</option>
-        <option value="random_tree_50">random_tree_50</option>
-        <option value="random_tree_100">random_tree_100</option>
-        <option value="random_tree_150">random_tree_150</option>
-        <option value="random_tree_200">random_tree_200</option>
-        <option value="random_tree_250">random_tree_250</option>
-        <option value="random_tree_300">random_tree_300</option>
-        <option value="random_tree_350">random_tree_350</option>
-        <option value="random_tree_400">random_tree_400</option>
-        <option value="random_tree_450">random_tree_450</option>
-        <option value="random_tree_500">random_tree_500</option>
+        <option value="3elt">3elt</option>
+        <option value="1138_bus">1138_bus</option>
+        <option value="dwt_1005">dwt_1005</option>
+        <option value="dwt_2680">dwt_2680</option>
+        <option value="poli">poli</option>
+        <option value="USpowerGrid">USpowerGrid</option>
+        <option value="qh882">qh882</option>
       </select>
+      <button
+        onClick={() => {
+          const pos = graph.nodes.map(({ x, y, index, name }) => ({
+            x,
+            y,
+            index,
+            name,
+          }));
+
+          const blob = new Blob([JSON.stringify(pos)], {
+            type: "application/json",
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "position.json";
+          a.click();
+        }}
+      >
+        download position
+      </button>
       {graph && (
         <svg width={width} height={height}>
           <g>
