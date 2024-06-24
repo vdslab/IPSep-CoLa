@@ -6,10 +6,10 @@ import time
 
 import numpy as np
 from ipsep_cola import NodeBlocks, project
-from majorization.main import stress, weights_of_normalization_constant
+from majorization.main import weights_of_normalization_constant
 from networkx import floyd_warshall_numpy
 from util.constraint import Constraints, get_constraints_dict
-from util.graph import get_graph_and_constraints, init_positions, plot_graph
+from util.graph import get_graph_and_constraints, init_positions, plot_graph, stress
 
 
 def get_eta_steps(n, weight, iter, eps):
@@ -30,7 +30,7 @@ def get_eta_steps(n, weight, iter, eps):
     return steps
 
 
-def sgd_with_project(file_path, edge_length, gap, iter_count, eps):
+def sgd_with_project(file_path, edge_length, gap, iter_count, eps, seed=None):
     """
     # Returns
     Z: ndarray
@@ -46,7 +46,7 @@ def sgd_with_project(file_path, edge_length, gap, iter_count, eps):
     graph, constraints_data = get_graph_and_constraints(file_path)
     dist = floyd_warshall_numpy(graph)
     dist *= edge_length
-    Z = init_positions(graph, 2, 0)
+    Z = init_positions(graph, 2, seed)
     weights = weights_of_normalization_constant(2, dist)
     C = get_constraints_dict(constraints_data, default_gap=gap)
     constraints = Constraints(C["y"], Z.shape[0])
@@ -81,11 +81,16 @@ def sgd_with_project(file_path, edge_length, gap, iter_count, eps):
         Z[:, 1:2] = y.flatten()[:, None]
 
     for eta in steps:
-        print(eta)
+        # print(eta)
         np.random.shuffle(ij)
+        before = Z.copy()
         move(eta)
         stresses.append(stress(Z, dist, weights))
         times.append(time.time() - start_time)
+        diff = [np.linalg.norm(b - z, ord=2) for b, z in zip(before, Z)]
+        max_diff = max(diff)
+        if max_diff < 0.03:
+            break
 
     return Z, stresses, times
 

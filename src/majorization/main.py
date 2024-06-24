@@ -8,6 +8,7 @@ import networkx as nx
 import numpy as np
 from networkx import floyd_warshall_numpy
 from scipy.sparse.linalg import cg
+from util.graph import stress
 
 
 def weights_of_normalization_constant(alpha, dist):
@@ -26,26 +27,26 @@ def weights_of_normalization_constant(alpha, dist):
     return np.array(weights)
 
 
-# 全体のstress
-def stress(X, dist: list[list], weights):
-    """
-    Returns: 全体のストレス
-    """
-    # dist: graph-theoretical distance
-    #   d_{ij}: the length of the shortest path connecting i and j
-    #   Cohen -> the linear-network distance
-    #     because: better convey any clustered structure in the graph.
-    # weight: normalization constant
-    #   w_{ij} = d_{ij}^{ -1 * alpha }
-    #   Kamada ans Kawai -> alpha = 2
-    #   Cohen -> alpha = 0 and 1
+# # 全体のstress
+# def stress(X, dist: list[list], weights):
+#     """
+#     Returns: 全体のストレス
+#     """
+#     # dist: graph-theoretical distance
+#     #   d_{ij}: the length of the shortest path connecting i and j
+#     #   Cohen -> the linear-network distance
+#     #     because: better convey any clustered structure in the graph.
+#     # weight: normalization constant
+#     #   w_{ij} = d_{ij}^{ -1 * alpha }
+#     #   Kamada ans Kawai -> alpha = 2
+#     #   Cohen -> alpha = 0 and 1
 
-    stress_sum = 0
-    for i in range(len(X)):
-        for j in range(i + 1, len(X)):
-            mag = np.linalg.norm(X[i] - X[j])
-            stress_sum += weights[i][j] * (mag - dist[i][j]) * (mag - dist[i][j])
-    return stress_sum
+#     stress_sum = 0
+#     for i in range(len(X)):
+#         for j in range(len(X)):
+#             mag = np.linalg.norm(X[i] - X[j])
+#             stress_sum += weights[i][j] * (mag - dist[i][j]) * (mag - dist[i][j])
+#     return stress_sum
 
 
 def weight_laplacian(weights):
@@ -100,6 +101,10 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
         G.add_edge(*link)
     dist = floyd_warshall_numpy(G)
     dist *= 20
+    print("dist")
+    import pprint as pp
+
+    pp.pprint(dist)
 
     # 座標の初期値はランダム
     Z = np.random.rand(n, dim)
@@ -114,7 +119,7 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
     Lw = weight_laplacian(weights)
 
     # 終了する閾値
-    eps = 0.0_01
+    eps = 0.0001
     now_stress = stress(Z, dist, weights)
     new_stress = 0.5 * now_stress
 
@@ -128,17 +133,18 @@ def stress_majorization(nodes, links, *, dim=2, initZ=None):
             Z[1:, a] = cg(Lw[1:, 1:], (Lz @ Z[:, a])[1:])[0]
 
         new_stress = stress(Z, dist, weights)
-        print(f"{now_stress=} -> {new_stress=}")
-        print(delta_stress(now_stress, new_stress))
+        # print(f"{now_stress=} -> {new_stress=}")
+        # print(delta_stress(now_stress, new_stress))
         if delta_stress(now_stress, new_stress) < eps:
             break
         now_stress = new_stress
 
+    print("last stress", new_stress)
     return Z
 
 
 if __name__ == "__main__":
-    with open("./src/data/no_cycle_tree.json") as f:
+    with open("src/data/gnp_random_all_constraints_5.json") as f:
         data = json.load(f)
 
     nodes = [i + 1 for i in range(len(data["nodes"]))]
@@ -151,6 +157,9 @@ if __name__ == "__main__":
 
     np.random.seed(0)
     Z = stress_majorization(nodes, links)
+    import pprint as pp
+
+    pp.pprint(Z)
 
     def view():
         G = nx.DiGraph()
@@ -167,7 +176,7 @@ if __name__ == "__main__":
         position = {i + 1: Z[i] for i in range(n)}
         today = datetime.date.today()
         now = datetime.datetime.now().time()
-        os.makedirs(f"result/{today}", exist_ok=True)
+        os.makedirs(f"result/majorization/{today}", exist_ok=True)
 
         fig, ax = plt.subplots(figsize=(10, 10))
         ax.set_aspect("equal")
@@ -176,11 +185,11 @@ if __name__ == "__main__":
         nx.draw(
             G,
             pos=position,
-            node_size=300,
+            node_size=50,
             labels={i + 1: i for i in range(n)},
             edge_color=edge_colors,
             ax=ax,
         )
-        plt.savefig(f"result/{today}/{now}.png")
+        plt.savefig(f"result/majorization/{today}/{now}.png")
 
     view()

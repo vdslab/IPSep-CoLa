@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from majorization.main import (
-    stress,
     weight_laplacian,
     weights_of_normalization_constant,
     z_laplacian,
@@ -15,7 +14,7 @@ from majorization.main import (
 from networkx import floyd_warshall_numpy
 from scipy.sparse.linalg import cg
 from util.constraint import Constraints, get_constraints_dict
-from util.graph import get_graph_and_constraints, init_positions
+from util.graph import get_graph_and_constraints, init_positions, stress
 
 from .block import NodeBlocks
 from .QPSC import solve_QPSC
