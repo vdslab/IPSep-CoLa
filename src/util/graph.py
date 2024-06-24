@@ -52,3 +52,12 @@ def plot_graph(G: nx.Graph, Z, save_dir, file_name="graph.png"):
     )
     plt.savefig(os.path.join(save_dir, file_name))
     plt.close()
+
+
+def stress(X, dist: list[list], weights):
+    stress_sum = 0
+    for i in range(len(X)):
+        for j in range(len(X)):
+            mag = np.linalg.norm(X[i] - X[j])
+            stress_sum += weights[i][j] * ((mag - dist[i][j]) ** 2)
+    return stress_sum
