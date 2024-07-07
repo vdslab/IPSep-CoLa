@@ -12,7 +12,7 @@ class TestGraph(unittest.TestCase):
         Xweight = [[0, 1], [1, 0]]
         Xstress = stress(X, Xdist, Xweight)
         exact = 18 - 8 * pow(2, 0.5)
-        self.assertLess(Xstress - exact, 1e-4)
+        self.assertLess(abs(Xstress - exact), 1e-4)
 
     def test_digraph_stress(self):
         Y = np.array([[1, 4], [6, 4], [3, 2], [5, 1]])
@@ -20,7 +20,7 @@ class TestGraph(unittest.TestCase):
         Yweight = [[0, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 0]]
         Ystress = stress(Y, Ydist, Yweight)
         exact = 31 - 8 * pow(2, 0.5) - 4 * pow(5, 0.5)
-        self.assertLess(Ystress - exact, 1e-4)
+        self.assertLess(abs(Ystress - exact), 1e-4)
 
     def test_distance_matrix(self):
         graph = Graph()
@@ -32,7 +32,7 @@ class TestGraph(unittest.TestCase):
         for i in range(len(matrix)):
             self.assertEqual(len(matrix[i]), len(exact[i]))
             for j in range(len(matrix[i])):
-                self.assertAlmostEqual(matrix[i][j], exact[i][j], 1e-4)
+                self.assertLess(abs(matrix[i][j] - exact[i][j]), 1e-4)
 
 
 if __name__ == "__main__":
