@@ -12,10 +12,12 @@ wheels/
 result
 src/data/json/random/*.json
 src/data/json/download/*.json
-src/data/cola/*.json
+src/data/cola/**/*.json
 js/public/random/*.json
 js/public/download/*.json
 *.tar.gz
 *.Identifier
 *.mat
 *.mtx
+/egraph-rs
+*.log*
