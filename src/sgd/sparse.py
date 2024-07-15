@@ -10,7 +10,7 @@ import numpy as np
 from ipsep_cola import NodeBlocks, project
 from majorization.main import weights_of_normalization_constant
 from util.constraint import Constraints, get_constraints_dict
-from util.graph import get_graph_and_constraints
+from util.graph import get_graph_and_constraints, plot_graph
 
 logger = getLogger(__name__)
 handler = handlers.RotatingFileHandler("log1.log", maxBytes=100000)
@@ -55,14 +55,10 @@ def sparse_sgd_with_constraints(
 
     drawing = eg.DrawingEuclidean2d.initial_placement(graph)
     rng = eg.Rng.seed_from(seed) if seed is not None else eg.Rng()
-    sgd = eg.SparseSgd(
-        graph,
-        lambda _: edge_length,  # edge length
-        povot_count,  # number of pivots
-        rng,
-    )
+    d = eg.all_sources_dijkstra(graph, lambda _: edge_length)
+    sgd = eg.FullSgd.new_with_distance_matrix(d)
     scheduler = sgd.scheduler(
-        iter_count,  # number of iterations
+        100,  # number of iterations
         eps,  # eps: eta_min = eps * min d[i, j] ^ 2
     )
 
@@ -77,9 +73,16 @@ def sparse_sgd_with_constraints(
     def step(eta):
         sgd.shuffle(rng)
         sgd.apply(drawing, eta)
-        apply_project()
 
-    scheduler.run(step)
+    for i in range(0, 100, 10):
+        j = 100 - i
+        for i in range(30):
+            scheduler.step(step)
+        # for i in range(15):
+        #     apply_project()
+        for i in range(70):
+            scheduler.step(step)
+            apply_project()
 
     # pos = {u: (drawing.x(i), drawing.y(i)) for u, i in indices.items()}
     pos = [(drawing.x(i), drawing.y(i)) for u, i in indices.items()]
@@ -138,7 +141,9 @@ def main():
                 iter_count=100,
                 eps=0.1,
             )
+
             stresses.append(eg.stress(drawing, d))
+            plot_graph(nx_graph, pos, f"./src/data/SGD/sparse/{basename}_{i}.png")
             with open(f"./src/data/SGD/sparse/{basename}", "w") as f:
                 json.dump(stresses, f, indent=2)
         print(stresses)
