@@ -80,23 +80,26 @@ def sgd_with_project(file_path, edge_length, gap, iter_count, eps, seed=None):
         y = project(constraints, blocks)
         Z[:, 1:2] = y.flatten()[:, None]
 
+    before_stress = stress(Z, dist, weights)
+    cur_stress = before_stress
     for eta in steps:
         # print(eta)
         np.random.shuffle(ij)
-        before = Z.copy()
         move(eta)
-        stresses.append(stress(Z, dist, weights))
+
+        cur_stress = stress(Z, dist, weights)
+        stresses.append(cur_stress)
         times.append(time.time() - start_time)
-        diff = [np.linalg.norm(b - z, ord=2) for b, z in zip(before, Z)]
-        max_diff = max(diff)
-        if max_diff < 0.03:
+
+        if abs(cur_stress - before_stress) < 1e-4:
             break
+        before_stress = cur_stress
 
     return Z, stresses, times
 
 
 if __name__ == "__main__":
-    print(glob.glob("src/data/*.json"))
+    import json
 
     gaps = np.arange(10, 51, 10)
     edge_lengths = np.arange(10.0, 51.0, 10.0)
@@ -105,6 +108,27 @@ if __name__ == "__main__":
     save_dir = f"result/SGD/{today}/{now}"
     os.makedirs(save_dir, exist_ok=True)
 
-    Z, _, _ = sgd_with_project("./src/data/no_cycle_tree.json", 20, 20, 150, 0.01)
-    graph = get_graph_and_constraints("./src/data/no_cycle_tree.json")[0]
-    plot_graph(graph, Z, save_dir, "no_cycle_tree.png")
+    # filse = glob.glob("./src/data/json/download/*.json")
+    filse = [
+        # "./src/data/json/download/no_cycle_tree.json",
+        # "./src/data/json/download/qh882.json",
+        "./src/data/json/download/dwt_1005.json",
+        "./src/data/json/download/1138_bus.json",
+        "./src/data/json/download/dwt_2680.json",
+        "./src/data/json/download/USpowerGrid.json",
+        "./src/data/json/download/3elt.json",
+    ]
+
+    for file in filse:
+        print(file)
+        stresses = []
+        for i in range(20):
+            print("\t", i)
+            Z, s, _ = sgd_with_project(file, 20, 20, 100, 0.01)
+            stresses.append(s[-1])
+            with open(f"./src/data/SGD/stress/{os.path.basename(file)}", "w") as f:
+                json.dump(stresses, f, indent=2)
+
+    # Z, _, _ = sgd_with_project("./src/data/no_cycle_tree.json", 20, 20, 150, 0.01)
+    # graph = get_graph_and_constraints("./src/data/no_cycle_tree.json")[0]
+    # plot_graph(graph, Z, save_dir, "no_cycle_tree.png")
