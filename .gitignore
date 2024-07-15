@@ -21,3 +21,4 @@ js/public/download/*.json
 *.mtx
 /egraph-rs
 *.log*
+!src/data/cola/stress/*.json
