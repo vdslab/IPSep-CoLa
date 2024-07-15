@@ -22,3 +22,4 @@ js/public/download/*.json
 /egraph-rs
 *.log*
 !src/data/cola/stress/*.json
+*.png
