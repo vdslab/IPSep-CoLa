@@ -3,10 +3,14 @@ import unittest
 import egraph as eg
 import numpy as np
 from networkx import Graph
+
 from util.graph import distance_matrix, stress
 
 
 class TestGraph(unittest.TestCase):
+    def setUp(self):
+        print("setUp", self._testMethodName)
+
     def test_graph_stress(self):
         X = np.array([[1, 2], [3, 4]])
         Xdist = [[0, 1], [1, 0]]
@@ -67,10 +71,9 @@ class TestGraph(unittest.TestCase):
         self.assertLess(abs(Ystress - s), 1e-4)
 
         exact = 18 - 8 * pow(2, 0.5)
-        
+
         self.assertLess(abs(Ystress - exact / 2), 1e-4)
         self.assertLess(abs(Xstress - Ystress), 1e-4)
-        
 
 
 if __name__ == "__main__":

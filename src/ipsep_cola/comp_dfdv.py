@@ -1,5 +1,6 @@
 import networkx as nx
-from util.constraint.constraint import Constraints
+
+from ipsep_cola.constraint.constraint import Constraints
 
 from .block import NodeBlocks
 
@@ -42,7 +43,10 @@ def comp_dfdv(
     ac_digraph = make_ditree(child, ac_graph)
 
     x = node_blocks.positions
-    dfdv = {node: node_blocks.posn(node) - x[node] for node in nodes}
+    dfdv = {
+        node: node_blocks.weight[node] * (node_blocks.posn(node) - x[node])
+        for node in nodes
+    }
     for c in reversed(list(nx.topological_sort(ac_digraph))):
         for p in ac_digraph.predecessors(c):
             dfdv[p] += dfdv[c]

@@ -1,14 +1,27 @@
 import glob
 import json
 
+import egraph as eg
+import networkx as nx
 import numpy as np
+from networkx import floyd_warshall_numpy
+
 from majorization.main import (
     stress,
     weight_laplacian,
     weights_of_normalization_constant,
 )
-from networkx import floyd_warshall_numpy
 from util.graph import get_graph_and_constraints
+
+
+def nxgraph_to_eggraph(graph: nx.Graph) -> tuple[eg.Graph, dict]:
+    eggraph = eg.Graph()
+    indices = {}
+    for u in graph.nodes:
+        indices[u] = eggraph.add_node(u)
+    for u, v in graph.edges:
+        eggraph.add_edge(indices[u], indices[v], (u, v))
+    return eggraph, indices
 
 
 def get_data(file):
@@ -37,21 +50,16 @@ dirs = glob.glob("src/data/cola/**/")
 print(dirs)
 print([os.path.basename(os.path.dirname(d)) for d in dirs])
 
-dirs = [
-    "src/data/cola/no_cycle_tree/",
-    "src/data/cola/qh882/",
-    "src/data/cola/1138_bus/",
-    "src/data/cola/dwt_1005/",
-    "src/data/cola/dwt_2680/",
-    "src/data/cola/USpowerGrid/",
-    "src/data/cola/3elt/",
-]
+os.makedirs("src/data/align/cola/stress", exist_ok=True)
+dirs = [f"src/data/align/cola/{node_n}/" for node_n in range(100, 2001, 100)]
 for dir in dirs:
     dirname = os.path.basename(os.path.dirname(dir))
     if dirname == "stress":
         continue
     print(dirname)
-    files = glob.glob(os.path.join(dir, "*.json"))
+    files = [
+        file for file in glob.glob(os.path.join(dir, "*.json")) if "no" not in file
+    ]
     stresses = []
     for file in files:
         print("\t", file)
@@ -61,8 +69,9 @@ for dir in dirs:
         dist = data["distanceMatrix"]
         weights = weights_of_normalization_constant(2, dist)
         stresses.append(stress(xy, dist, weights))
-        with open(f"src/data/cola/stress/{dirname}.json", "w") as f:
-            json.dump(stresses, f, indent=2)
+    with open(f"src/data/align/cola/stress{dirname}.json", "w") as f:
+        json.dump(stresses, f, indent=2)
+
 # for base_name in base_names:
 #     files = glob.glob(f"src/data/cola/{base_name}*.json")
 #     stresses = []

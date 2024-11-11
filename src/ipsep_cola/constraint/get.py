@@ -6,6 +6,6 @@ def get_constraints_dict(constraints, *, default_gap=20):
         left = c["left"]
         right = c["right"]
         axis = c["axis"]
-        # gap = c["gap"]
-        C[axis].append([left, right, default_gap])
+        gap = c["gap"]
+        C[axis].append([left, right, gap])
     return C

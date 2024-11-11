@@ -1,5 +1,6 @@
 import json
 
+import egraph as eg
 import networkx as nx
 import numpy as np
 
@@ -32,3 +33,13 @@ def init_positions(G: nx.Graph, dim, seed=None):
     Z = np.random.rand(n, dim)
     Z[0] = [0 for _ in range(dim)]
     return Z
+
+
+def nxgraph_to_eggraph(graph: nx.Graph) -> tuple[eg.Graph, dict]:
+    eggraph = eg.Graph()
+    indices = {}
+    for u in graph.nodes:
+        indices[u] = eggraph.add_node(u)
+    for u, v in graph.edges:
+        eggraph.add_edge(indices[u], indices[v], (u, v))
+    return eggraph, indices

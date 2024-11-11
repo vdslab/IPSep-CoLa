@@ -2,12 +2,15 @@ from collections import deque
 
 import numpy as np
 from numpy import ndarray
-from util.constraint import Constraints
+
+from ipsep_cola.constraint.constraint import Constraints
 
 from .block import NodeBlocks
 from .comp_dfdv import comp_dfdv
 
 lm = dict()
+
+inactive = set()
 
 
 def solve_QPSC(
@@ -17,7 +20,6 @@ def solve_QPSC(
     node_blocks: NodeBlocks,
 ):
     global lm
-    # print("solve_QPSC")
     lm = dict()
     x = np.copy(node_blocks.positions)
     x = x.reshape(-1, 1)
@@ -67,8 +69,19 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
             b.nvars
         )
 
-        for c in AC:
-            lm[c] = 0
+        # for i in [100, 101]:
+        #     if i in b.vars:
+        #         node_blocks.offset[i] = node_blocks.desired_position[i] - b.posn
+        #         print(
+        #             f"{node_blocks.offset[i]=}",
+        #             f"{b.posn=}",
+        #             f"{node_blocks.desired_position[i]=}",
+        #         )
+        #     pass
+
+        # for c in AC:
+        #     lm[c] = 0
+        lm.clear()
 
         v = b.vars.pop()
         b.vars.add(v)
@@ -80,9 +93,11 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
         AC_list = list(AC)
         sc = AC_list[np.argmin([lm[c] for c in AC_list])]
         if lm[sc] >= 0:
-            break
+            continue
         no_split = False
         AC.discard(sc)
+        global inactive
+        inactive.add(sc)
 
         s = node_blocks.blocks[constraints.right(sc)]
 
@@ -109,6 +124,17 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
             if b.nvars != 0
             else 0
         )
+
+        # for i in [100, 101]:
+        #     if i in b.vars:
+        #         node_blocks.offset[i] = node_blocks.desired_position[i] - b.posn
+        #         print(
+        #             f"{node_blocks.offset[i]=}",
+        #             f"{b.posn=}",
+        #             f"{node_blocks.desired_position[i]=}",
+        #         )
+        #     pass
+        print(f"{b.posn=}", b.vars)
         b.active = {
             c
             for c in AC
@@ -147,20 +173,31 @@ def connected(s, AC, constraints: Constraints):
 
 
 def project(constraints: Constraints, node_blocks: NodeBlocks):
+    global inactive
     n = len(node_blocks.positions)
     block = node_blocks.blocks
     offset = node_blocks.offset
     B = node_blocks.B
 
     if len(constraints.constraints) != 0:
+        checked = set()
 
         def get_max_violation_c():
             violations = [
-                violation(ci, constraints, node_blocks)
+                (violation(ci, constraints, node_blocks), ci)
                 for ci in range(len(constraints.constraints))
             ]
-            c_index = np.argmax(violations)
-            return c_index
+            violations.sort(key=lambda x: x[0], reverse=True)
+            for v, c_index in violations:
+                if c_index not in inactive and c_index not in checked:
+                    checked.add(c_index)
+                    print(
+                        f"{c_index=}", f"{v=}", f"{constraints.constraints[c_index]=}"
+                    )
+                    return c_index
+
+            # c_index = np.argmax(violations)
+            # return c_index
 
         c = get_max_violation_c()
         iter = len(constraints.constraints)
@@ -202,6 +239,7 @@ def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
         if B[L].nvars + B[R].nvars != 0
         else 0
     )
+    print(f"{B[L].posn=}", B[L].vars, B[R].vars)
 
     B[L].active = B[L].active.union(B[R].active)
     B[L].active.add(c)
@@ -212,7 +250,7 @@ def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
 
     B[L].vars = B[L].vars.union(B[R].vars)
     B[L].nvars = B[L].nvars + B[R].nvars
-    B[R].nvars = 0
+    # B[R].nvars = 0
 
 
 def expand_block(b, c_tilde, constraints: Constraints, node_blocks: NodeBlocks):

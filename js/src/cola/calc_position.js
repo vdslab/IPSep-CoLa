@@ -40,7 +40,7 @@ graphs.forEach(({ graph, name, dist, length }) => {
       .links(graph?.links)
       .constraints(graph?.constraints)
       .distanceMatrix(dist)
-      .start(10, 15, 20, 15, false, true);
+      .start(10, 10, 10, 10, false, false);
 
     const nodes = graph.nodes.map(({ x, y, variable: { weight, index } }) => ({
       x,

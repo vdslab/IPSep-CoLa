@@ -2,16 +2,15 @@
 name = "ipsep-cola"
 version = "0.1.0"
 description = "Add your description here"
-authors = [
-    { name = "itochs", email = "halglobe0108@gmail.com" }
-]
+authors = [{ name = "itochs", email = "halglobe0108@gmail.com" }]
 dependencies = [
     "numpy>=1.26.4",
     "networkx>=3.2.1",
     "scipy>=1.13.1",
     "matplotlib>=3.8.3",
-    "PyQt5>=5.15.10",
+    "pyqt5>=5.15.11",
     "maturin>=1.7.0",
+    "pip>=24.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -22,9 +21,7 @@ build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true
-dev-dependencies = [
-    "snakeviz>=2.2.0",
-]
+dev-dependencies = ["snakeviz>=2.2.0"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
