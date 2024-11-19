@@ -134,7 +134,7 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
         #             f"{node_blocks.desired_position[i]=}",
         #         )
         #     pass
-        print(f"{b.posn=}", b.vars)
+        # print(f"{b.posn=}", b.vars)
         b.active = {
             c
             for c in AC
@@ -180,7 +180,6 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
     B = node_blocks.B
 
     if len(constraints.constraints) != 0:
-        checked = set()
 
         def get_max_violation_c():
             violations = [
@@ -189,13 +188,7 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
             ]
             violations.sort(key=lambda x: x[0], reverse=True)
             for v, c_index in violations:
-                if c_index not in inactive and c_index not in checked:
-                    checked.add(c_index)
-                    print(
-                        f"{c_index=}", f"{v=}", f"{constraints.constraints[c_index]=}"
-                    )
-                    return c_index
-
+                return c_index
             # c_index = np.argmax(violations)
             # return c_index
 
@@ -210,6 +203,8 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
             else:
                 expand_block(block[c_left], c, constraints, node_blocks)
             c = get_max_violation_c()
+        if iter > 0:
+            print("project no violation", f"{iter=}")
 
     x = [B[block[i]].posn + offset[i] for i in range(n)]
     x = np.array(x).reshape(-1, 1)
@@ -239,7 +234,7 @@ def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
         if B[L].nvars + B[R].nvars != 0
         else 0
     )
-    print(f"{B[L].posn=}", B[L].vars, B[R].vars)
+    # print(f"{B[L].posn=}", B[L].vars, B[R].vars)
 
     B[L].active = B[L].active.union(B[R].active)
     B[L].active.add(c)
@@ -310,7 +305,7 @@ def comp_path(left, right, AC, constraints: Constraints):
         AC_vars.add(c_left)
         AC_vars.add(c_right)
         AC_edges.add((c_left, c_right))
-        # AC_edges.add((c_right, c_left))
+        AC_edges.add((c_right, c_left))
 
     if left not in AC_vars or right not in AC_vars:
         return []
