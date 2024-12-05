@@ -24,7 +24,7 @@ class Block:
 
 
 class NodeBlocks:
-    def __init__(self, axis_positions: ndarray):
+    def __init__(self, axis_positions: ndarray, desired_positions: ndarray):
         if axis_positions.ndim != 1:
             raise ValueError("axis_positions must be a 1D array")
 
@@ -35,7 +35,7 @@ class NodeBlocks:
         self.weight = [1 for _ in range(n)]
         self.B: list[Block] = [Block(i, axis_positions[i]) for i in range(n)]
         self.__positions = axis_positions[:]
-        self.desired_position = axis_positions[:]
+        self.desired_position = desired_positions[:]
 
     def fixedWeight(self, i: int, w: float = 1000):
         self.weight[i] = w
