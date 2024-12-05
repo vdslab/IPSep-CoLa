@@ -32,6 +32,7 @@ def comp_dfdv(
         left = constraints.left(c)
         right = constraints.right(c)
         edges[(left, right)] = c
+        edges[(right, left)] = c
         edge_set.add((left, right))
         nodes.add(left)
         nodes.add(right)
@@ -42,7 +43,7 @@ def comp_dfdv(
     ac_graph = nx.Graph(edges.keys())
     ac_digraph = make_ditree(child, ac_graph)
 
-    x = node_blocks.positions
+    x = node_blocks.desired_position
     dfdv = {
         node: node_blocks.weight[node] * (node_blocks.posn(node) - x[node])
         for node in nodes
@@ -53,10 +54,10 @@ def comp_dfdv(
 
     lm = dict()
     for edge in ac_digraph.edges:
-        if c := edges.get(edge):
+        c = edges.get(edge)
+        if (c := edges.get(edge)) is not None:
             lm[c] = dfdv[edge[1]]
         else:
-            c = edges.get(reversed(edge))
-            lm[c] = -dfdv[edge[1]]
+            raise ValueError(f"no edge {edge} in {edges}")
 
     return lm
