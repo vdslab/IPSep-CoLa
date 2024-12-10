@@ -19,16 +19,17 @@ def get_data(file):
 
 
 def main():
-    save_dir = "src/data/square/violation"
+    save_dir = "result"
+    violation_dir = "result"
     os.makedirs(save_dir, exist_ok=True)
     webcola_violations = []
     fullSGD_violations = []
     labels = []
     for node_n in range(100, 501, 100):
-        webcola_violation = get_data(f"src/data/square/violation/webcola_{node_n}.json")
+        webcola_violation = get_data(f"{violation_dir}/webcola_{node_n}.json")
         wvs = [sum([v if v > 0 else 0 for v in wv]) for wv in webcola_violation]
 
-        fullSGD_violation = get_data(f"src/data/square/violation/fullsgd_{node_n}.json")
+        fullSGD_violation = get_data(f"{violation_dir}/fullsgd_{node_n}.json")
         fsvs = [sum([v if v > 0 else 0 for v in fsv]) for fsv in fullSGD_violation]
         webcola_violations.append(wvs)
         fullSGD_violations.append(fsvs)

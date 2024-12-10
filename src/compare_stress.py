@@ -18,15 +18,16 @@ def get_data(file):
 
 
 def main():
-    save_dir = "src/data/square"
-    dir = "src/data/with_align/sgd"
+    save_dir = "result"
+    webcola_dir = "result"
+    sgd_dir = "result"
     webcolas = []
     fullSGDs = []
     labels = []
     for node_n in range(100, 2001, 100):
-        webcola_stress = get_data(f"src/data/with_align/cola/stress{node_n}.json")
+        webcola_stress = get_data(f"{webcola_dir}/stress{node_n}.json")
         fullSGD_stress = []
-        with open(f"{dir}/stress_potition_{node_n}.json") as f:
+        with open(f"{sgd_dir}/stress_potition_{node_n}.json") as f:
             data = json.load(f)["stresses"]
             data = [float(d) for d in data]
             fullSGD_stress = data

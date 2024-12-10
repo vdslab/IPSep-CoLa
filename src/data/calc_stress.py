@@ -46,12 +46,13 @@ def xy_dict_to_list(data):
 
 import os
 
-dirs = glob.glob("src/data/cola/**/")
-print(dirs)
-print([os.path.basename(os.path.dirname(d)) for d in dirs])
+# dirs = glob.glob("src/data/cola/**/")
+# print(dirs)
+# print([os.path.basename(os.path.dirname(d)) for d in dirs])
 
-os.makedirs("src/data/align/cola/stress", exist_ok=True)
-dirs = [f"src/data/align/cola/{node_n}/" for node_n in range(100, 2001, 100)]
+
+pos_dir = "result"
+dirs = [f"{pos_dir}/{node_n}/" for node_n in range(1600, 2001, 100)]
 for dir in dirs:
     dirname = os.path.basename(os.path.dirname(dir))
     if dirname == "stress":
@@ -69,7 +70,7 @@ for dir in dirs:
         dist = data["distanceMatrix"]
         weights = weights_of_normalization_constant(2, dist)
         stresses.append(stress(xy, dist, weights))
-    with open(f"src/data/align/cola/stress{dirname}.json", "w") as f:
+    with open(f"result/stress{dirname}.json", "w") as f:
         json.dump(stresses, f, indent=2)
 
 # for base_name in base_names:
