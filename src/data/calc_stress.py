@@ -52,7 +52,7 @@ import os
 
 
 pos_dir = "result"
-dirs = [f"{pos_dir}/{node_n}/" for node_n in range(1600, 2001, 100)]
+dirs = [f"{pos_dir}/{node_n}/" for node_n in range(100, 2001, 100)]
 for dir in dirs:
     dirname = os.path.basename(os.path.dirname(dir))
     if dirname == "stress":
