@@ -27,7 +27,7 @@ def main():
     webcolas = []
     fullSGDs = []
     labels = []
-    for file in files[:5]:
+    for file in files:
         base_file = os.path.basename(file)
         base_name = os.path.splitext(base_file)[0]
         node_n = int(base_name.split("_")[-1])
