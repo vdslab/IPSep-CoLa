@@ -18,28 +18,21 @@ def get_data(file):
 
 
 def main():
-    # today = datetime.date.today()
-    # now = datetime.datetime.now().time()
-    save_dir = "src/data/align"
-    # os.makedirs(save_dir, exist_ok=True)
-
-    dir = "src/data/align/sgd"
+    save_dir = "src/data/square"
+    dir = "src/data/with_align/sgd"
     files = list(
         glob.glob(f"{dir}/stress_po*.json"),
     )
     files.sort(key=lambda x: int(os.path.basename(x).split(".")[0].split("_")[-1]))
-    # pprint(files)
-    # # base_names = ["no_cycle_tree.json", "qh882.json"]
-
     webcolas = []
     fullSGDs = []
     labels = []
-    for file in files:
+    for file in files[:5]:
         base_file = os.path.basename(file)
         base_name = os.path.splitext(base_file)[0]
         node_n = int(base_name.split("_")[-1])
         print(base_name, node_n)
-        webcola_stress = get_data(f"src/data/align/cola/stress{node_n}.json")
+        webcola_stress = get_data(f"src/data/with_align/cola/stress{node_n}.json")
         fullSGD_stress = []
         with open(file) as f:
             data = json.load(f)["stresses"]
