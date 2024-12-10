@@ -69,37 +69,28 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
             b.nvars
         )
 
-        # for i in [100, 101]:
-        #     if i in b.vars:
-        #         node_blocks.offset[i] = node_blocks.desired_position[i] - b.posn
-        #         print(
-        #             f"{node_blocks.offset[i]=}",
-        #             f"{b.posn=}",
-        #             f"{node_blocks.desired_position[i]=}",
-        #         )
-        #     pass
-
-        # for c in AC:
-        #     lm[c] = 0
-        lm.clear()
+        for c in AC:
+            lm[c] = 0
+        # lm.clear()
 
         v = b.vars.pop()
         b.vars.add(v)
         sub_lm = comp_dfdv(v, AC, None, constraints, node_blocks)
+        # calc_dfdv_dfs(v, AC, None, constraints, node_blocks, lm)
         for key, value in sub_lm.items():
             lm.setdefault(key, 0)
             lm[key] = value
 
         AC_list = list(AC)
-        sc = AC_list[np.argmin([lm[c] for c in AC_list])]
-        if lm[sc] >= 0:
-            continue
+        AC_lm = np.array([lm.get(c, 0) for c in AC_list])
+        sc = AC_list[np.argmin(AC_lm)]
+        if lm.get(sc, 0) >= 0:
+            # continue
+            break
         no_split = False
         AC.discard(sc)
-        global inactive
-        inactive.add(sc)
 
-        s = node_blocks.blocks[constraints.right(sc)]
+        s = constraints.right(sc)
 
         node_blocks.B[s].vars = connected(s, AC, constraints)
 
@@ -125,16 +116,6 @@ def split_blocks(position: ndarray, constraints: Constraints, node_blocks: NodeB
             else 0
         )
 
-        # for i in [100, 101]:
-        #     if i in b.vars:
-        #         node_blocks.offset[i] = node_blocks.desired_position[i] - b.posn
-        #         print(
-        #             f"{node_blocks.offset[i]=}",
-        #             f"{b.posn=}",
-        #             f"{node_blocks.desired_position[i]=}",
-        #         )
-        #     pass
-        # print(f"{b.posn=}", b.vars)
         b.active = {
             c
             for c in AC
@@ -203,8 +184,8 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
             else:
                 expand_block(block[c_left], c, constraints, node_blocks)
             c = get_max_violation_c()
-        if iter > 0:
-            print("project no violation", f"{iter=}")
+        # if iter > 0:
+        #     print("project no violation", f"{iter=}")
 
     x = [B[block[i]].posn + offset[i] for i in range(n)]
     x = np.array(x).reshape(-1, 1)
@@ -214,7 +195,8 @@ def project(constraints: Constraints, node_blocks: NodeBlocks):
 def violation(ci, constraints: Constraints, node_blocks: NodeBlocks):
     ci_left = constraints.left(ci)
     ci_right = constraints.right(ci)
-    return node_blocks.posn(ci_left) + constraints.gap(ci) - node_blocks.posn(ci_right)
+    vio = node_blocks.posn(ci_left) + constraints.gap(ci) - node_blocks.posn(ci_right)
+    return vio
 
 
 def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
@@ -244,13 +226,14 @@ def merge_blocks(L, R, c, constraints: Constraints, node_blocks: NodeBlocks):
         offset[i] += d
 
     B[L].vars = B[L].vars.union(B[R].vars)
-    B[L].nvars = B[L].nvars + B[R].nvars
-    # B[R].nvars = 0
+    B[L].nvars = len(B[L].vars)
+    B[R].nvars = 0
+    B[R].vars.clear()
 
 
 def expand_block(b, c_tilde, constraints: Constraints, node_blocks: NodeBlocks):
     global lm
-    x = node_blocks.positions
+    x = node_blocks.desired_position
     B = node_blocks.B
     offset = node_blocks.offset
 
@@ -305,7 +288,7 @@ def comp_path(left, right, AC, constraints: Constraints):
         AC_vars.add(c_left)
         AC_vars.add(c_right)
         AC_edges.add((c_left, c_right))
-        AC_edges.add((c_right, c_left))
+        # AC_edges.add((c_right, c_left))
 
     if left not in AC_vars or right not in AC_vars:
         return []

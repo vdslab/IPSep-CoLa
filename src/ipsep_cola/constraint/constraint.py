@@ -12,11 +12,9 @@ class Constraints:
         self.graph = [[] for _ in range(node_len)]
         self.in_graph = [[] for _ in range(node_len)]
         for l, r, g in C:
-            # self.graph[l - 1].append((r - 1, g))
-            # self.in_graph[r - 1].append((l - 1, g))
             self.graph[l].append((r, g))
+            self.graph[r].append((l, g))
             self.in_graph[r].append((l, g))
-        print(f"{self.constraints=}")
 
     def left(self, index) -> int:
         return self.constraints[index][0]
