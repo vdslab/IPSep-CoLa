@@ -272,14 +272,22 @@ def main():
             print(stresses)
 
 
-def tree():
-    graph_base_dir = "src/data/json/random_tree/2024-10-27/07:07:06.283826"
+savedir = "result"
+nxgraph = None
+indices = None
+
+
+def tree(i):
+    global nxgraph, savedir
+    graph_base_dir = "src/data/random_tree"
     # d_today = datetime.date.today()
     # t_now = datetime.datetime.now().time()
     # savedir = f"src/data/json/{d_today}/random_tree/05:44:55.186990"
     # "src/data/json/2024-10-21/random_tree/05:44:55.186990"
     # os.makedirs(savedir, exist_ok=True)
-    savedir = "src/data/align/sgd"
+    # savedir = "src/data/square/sgd"
+    # savedir = "result"
+    os.makedirs(savedir, exist_ok=True)
     data = []
     for node_n in range(100, 101, 100):
         graphdir = f"{graph_base_dir}/{node_n}"
@@ -287,119 +295,7 @@ def tree():
         files.sort()
         stresses = []
         positions = []
-        for file in files:
-            with open(file) as f:
-                json_data = json.load(f)
-                graph_data = json_data["graph"]
-                dist_list = json_data["dist"]
-                length = json_data["length"]
-
-            nxgraph = nx.Graph()
-            for node in graph_data["nodes"]:
-                nxgraph.add_node(node["id"])
-            for link in graph_data["links"]:
-                nxgraph.add_edge(link["source"], link["target"])
-            C = {"y": [], "x": []}
-            C = get_constraints_dict(graph_data["constraints"], default_gap=20)
-            # C_align = get_constraints_dict(graph_data["alignment"], default_gap=20)
-            # C["y"] += C_align["y"]
-            # C["x"] += C_align["x"]
-            # nxgraph = nx.random_tree(3)
-
-            # C = {"y": [[0, 1, 0], [1, 0, 0]], "x": [[0, 1, 0], [1, 0, 0]]}
-            real_node_n = nxgraph.number_of_nodes()
-            fixed_nodes = [
-                {"index": real_node_n, "x": 0, "y": 0},
-                {"index": real_node_n + 1, "x": 25, "y": 25},
-            ]
-            # dist_list = nx.floyd_warshall_numpy(nxgraph)
-            node_num = real_node_n + len(fixed_nodes)
-
-            for i in range(real_node_n):
-                for j in range(i + 1, real_node_n):
-                    C["y"].append([i, j, 10])
-                    C["x"].append([i, j, 10])
-                    C["y"].append([j, i, 10])
-                    C["x"].append([j, i, 10])
-
-            for i in range(real_node_n):
-                C["y"].append([real_node_n, i, 30])
-                C["x"].append([real_node_n, i, 30])
-                C["y"].append([i, real_node_n + 1, 30])
-                C["x"].append([i, real_node_n + 1, 30])
-
-            sgd_param = SGDParameter(iterator=10, eps=0.1, seed=None)
-            const_dist = dict()
-            if C.get("y") is not None and len(C["y"]) > 0:
-                const_dist["y"] = Constraints(C["y"], node_num)
-            if C.get("x") is not None and len(C["x"]) > 0:
-                const_dist["x"] = Constraints(C["x"], node_num)
-            print(f"{C=}")
-            x_graph = nx.Graph()
-            for l, r, g in C["x"]:
-                x_graph.add_edge(l, r)
-            y_graph = nx.Graph()
-            for l, r, g in C["y"]:
-                y_graph.add_edge(l, r)
-
-            position, stress = __sgd(
-                nxgraph,
-                const_dist,
-                edge_length=length,
-                sgd_parameter=sgd_param,
-                dist_list=dist_list,
-                fixed_nodes=fixed_nodes,
-            )
-            # nxgraph.remove_node(real_node_n)
-            # nxgraph.remove_node(real_node_n + 1)
-            # position = position[:real_node_n]
-            plot_graph(nxgraph, position, savedir, f"{node_n}.png", aspect="equal")
-            stresses.append(stress)
-            positions.append(position)
-            # break
-            with open(f"{savedir}/stress_potition_{node_n}.json", "w") as f:
-                json.dump(
-                    {
-                        "stresses": stresses,
-                        "positions": positions,
-                    },
-                    f,
-                    indent=2,
-                )
-            break
-
-        data.append(
-            {
-                "node_n": node_n,
-                "stresses": stresses,
-            }
-        )
-        break
-
-        with open(f"{savedir}/stress.json", "w") as f:
-            json.dump(
-                data,
-                f,
-                indent=2,
-            )
-
-
-def tree():
-    graph_base_dir = "src/data/json/random_tree/2024-10-27/07:07:06.283826"
-    # d_today = datetime.date.today()
-    # t_now = datetime.datetime.now().time()
-    # savedir = f"src/data/json/{d_today}/random_tree/05:44:55.186990"
-    # "src/data/json/2024-10-21/random_tree/05:44:55.186990"
-    # os.makedirs(savedir, exist_ok=True)
-    savedir = "src/data/align/sgd"
-    data = []
-    for node_n in range(200, 201, 100):
-        graphdir = f"{graph_base_dir}/{node_n}"
-        files = glob.glob(f"{graphdir}/*.json")
-        files.sort()
-        stresses = []
-        positions = []
-        for file in files:
+        for i, file in enumerate(files):
             with open(file) as f:
                 json_data = json.load(f)
                 graph_data = json_data["graph"]
@@ -422,47 +318,16 @@ def tree():
             real_node_n = nxgraph.number_of_nodes()
             fixed_nodes = [
                 # {"index": real_node_n, "x": 0, "y": 0},
-                # {"index": real_node_n + 1, "x": 25, "y": 25},
+                # {"index": real_node_n + 1, "x": 200, "y": 2000},
             ]
-            # dist_list = nx.floyd_warshall_numpy(nxgraph)
             node_num = real_node_n + len(fixed_nodes)
 
-            # for i in range(real_node_n):
-            #     for j in range(i + 1, real_node_n):
-            #         C["y"].append([i, j, 10])
-            #         C["x"].append([i, j, 10])
-            #         C["y"].append([j, i, 10])
-            #         C["x"].append([j, i, 10])
-
-            # for i in range(real_node_n):
-            #     C["y"].append([real_node_n, i, 30])
-            #     C["x"].append([real_node_n, i, 30])
-            #     C["y"].append([i, real_node_n + 1, 30])
-            #     C["x"].append([i, real_node_n + 1, 30])
-
-            sgd_param = SGDParameter(iterator=10, eps=0.1, seed=None)
-            const_dist = dict()
+            sgd_param = SGDParameter(iterator=10, eps=0.1, seed=i)
+            const_dist = {"x": None, "y": None, "sq": {"x": None, "y": None}}
             if C.get("y") is not None and len(C["y"]) > 0:
                 const_dist["y"] = Constraints(C["y"], node_num)
             if C.get("x") is not None and len(C["x"]) > 0:
                 const_dist["x"] = Constraints(C["x"], node_num)
-            print(f"{C=}")
-            x_graph = nx.Graph()
-            for l, r, g in C["x"]:
-                x_graph.add_edge(l, r)
-            y_graph = nx.Graph()
-            for l, r, g in C["y"]:
-                y_graph.add_edge(l, r)
-            # nx.spring_layout(x_graph)
-            # nx.spring_layout(y_graph)
-            # nx.draw(x_graph)
-            # plt.savefig(f"x_graph_{node_n}.png")
-            # plt.close()
-            # nx.draw(y_graph)
-            # plt.savefig(f"y_graph_{node_n}.png")
-            # plt.close()
-            # plt.show()
-            # break
 
             position, stress = __sgd(
                 nxgraph,
@@ -472,10 +337,10 @@ def tree():
                 dist_list=dist_list,
                 fixed_nodes=fixed_nodes,
             )
-            # nxgraph.remove_node(real_node_n)
-            # nxgraph.remove_node(real_node_n + 1)
             # position = position[:real_node_n]
-            plot_graph(nxgraph, position, savedir, f"{node_n}.png", aspect="equal")
+            plot_graph(
+                nxgraph, position, savedir, f"{node_n}_tree_{i}.png", aspect="equal"
+            )
             stresses.append(stress)
             positions.append(position)
             # break
@@ -496,7 +361,7 @@ def tree():
                 "stresses": stresses,
             }
         )
-        # break
+        break
 
         with open(f"{savedir}/stress.json", "w") as f:
             json.dump(
@@ -527,6 +392,7 @@ def __sgd(
     dist_list,
     fixed_nodes: list[dict] = [],
 ):
+    global indices
     eggraph, indices = nxgraph_to_eggraph(nx_graph)
     drawing = eg.DrawingEuclidean2d.initial_placement(eggraph)
     dist = eg.all_sources_dijkstra(eggraph, lambda _: edge_length)
@@ -535,13 +401,10 @@ def __sgd(
     _pos = __do_sgd(
         drawing, constraints, dist, sgd, sgd_parameter, dist_list, fixed_nodes
     )
-    for pj in _pos:
-        for pp, jj in pj:
-            print(jj)
-            pp = [(pp["x"][i], pp["y"][i]) for i in range(len(indices))]
-            plot_graph(nx_graph, pp, "src/data/align/sgd", f"{jj}.png")
 
-    pos = [(drawing.x(i), drawing.y(i)) for u, i in indices.items()]
+    pos = [
+        (_pos["x"][indices[node]], _pos["y"][indices[node]]) for node in nx_graph.nodes
+    ]
     stress = eg.stress(drawing, dist)
     return pos, stress
 
@@ -573,7 +436,7 @@ def __do_sgd(
     #     parameter=parameter,
     #     fixed_nodes=fixed_nodes,
     # )
-    yield __do_project(
+    position = __do_project(
         constraints,
         dist=dist_list,
         drawing=drawing,
@@ -582,6 +445,7 @@ def __do_sgd(
         fixed_nodes=fixed_nodes,
         with_sgd=True,
     )
+    return position
 
 
 def __do_project(
@@ -593,6 +457,10 @@ def __do_project(
     fixed_nodes: list[dict] = [],
     with_sgd=False,
 ):
+    global nxgraph
+    global save_dir
+    global indices
+
     def step(eta):
         sgd.shuffle(parameter.rng)
         sgd.apply(drawing, eta)
@@ -601,6 +469,10 @@ def __do_project(
     ds = ds[ds != 0]
     d_min = np.min(ds)
     d_max = np.max(ds)
+    dist = np.array(dist)
+    A = -1 / (dist * dist)
+    for i in range(len(A)):
+        A[i][i] = -sum(A[i][:i]) - sum(A[i][i + 1 :])
 
     eta_max = 1 / (d_max**2)
     eta_min = parameter.eps / (d_min**2)
@@ -613,68 +485,105 @@ def __do_project(
     )
 
     fixed_nodes.sort(key=lambda x: x["index"])
-    # position = {
-    #     "x": np.array([drawing.x(i) for i in range(n)] + [0] * len(fixed_nodes)),
-    #     "y": np.array([drawing.y(i) for i in range(n)] + [0] * len(fixed_nodes)),
-    # }
+    cur_position = {
+        "x": np.array([drawing.x(i) for i in range(n)] + [0] * len(fixed_nodes)),
+        "y": np.array([drawing.y(i) for i in range(n)] + [0] * len(fixed_nodes)),
+    }
+    for node in fixed_nodes:
+        cur_position["y"][node["index"]] = node["y"]
+        cur_position["x"][node["index"]] = node["x"]
+    blocks = {
+        "x": NodeBlocks(cur_position["x"], cur_position["x"]),
+        "y": NodeBlocks(cur_position["y"], cur_position["y"]),
+    }
     # for node in fixed_nodes:
-    #     position["y"][node["index"]] = node["y"]
-    #     position["x"][node["index"]] = node["x"]
+    #     blocks["y"].fixedWeight(node["index"])
+    #     blocks["x"].fixedWeight(node["index"])
 
-    # blocks = {
-    #     "x": NodeBlocks(position["x"]),
-    #     "y": NodeBlocks(position["y"]),
-    # }
-    for j in range(parameter.iter):
+    pos = [
+        (cur_position["x"][indices[node]], cur_position["y"][indices[node]])
+        for node in nxgraph.nodes
+    ]
+    # pos = [(x, y) for x, y in zip(cur_position["x"], cur_position["y"])]
+    # plot_graph(nxgraph, pos, savedir, "100_tree1_before.png", aspect="equal")
+    no_split = False
+    cnt = 0
+    while cnt < 500:
+        # for j in range(parameter.iter):
         if with_sgd:
             sgd_scheduler.step(step)
-        eta = eta_max * np.exp(b * j)
-        position = {
+
+        des_position = {
             "x": np.array([drawing.x(i) for i in range(n)] + [0] * len(fixed_nodes)),
             "y": np.array([drawing.y(i) for i in range(n)] + [0] * len(fixed_nodes)),
         }
         for node in fixed_nodes:
-            position["y"][node["index"]] = node["y"]
-            position["x"][node["index"]] = node["x"]
-        blocks = {
-            "x": NodeBlocks(position["x"]),
-            "y": NodeBlocks(position["y"]),
-        }
-        for node in fixed_nodes:
-            blocks["y"].fixedWeight(node["index"])
-            blocks["x"].fixedWeight(node["index"])
+            des_position["y"][node["index"]] = node["y"]
+            des_position["x"][node["index"]] = node["x"]
+        before_pos = [
+            (des_position["x"][indices[node]], des_position["y"][indices[node]])
+            for node in nxgraph.nodes
+        ]
+        # plot_graph(nxgraph, pos, savedir, f"100_tree1_des_{j}.png", aspect="equal")
+        # print(nxgraph.nodes)
 
-        for key in constraints.keys():
-            block = blocks[key]
-            block.positions = position[key]
-            block.desired_position = position[key]
-
-        for key in constraints.keys():
-            _pos = position[key]
-            pos: np.ndarray = _pos.copy()
+        keys = ["x", "y"]
+        for key in keys:
+            if constraints[key] is None or len(constraints[key].constraints) == 0:
+                continue
+            d_pos: np.ndarray = des_position[key].copy()
+            c_pos: np.ndarray = cur_position[key].copy()
 
             block = blocks[key]
-            split_blocks(_pos.flatten(), constraints[key], block)
+            block.desired_position = d_pos
+            no_split = split_blocks(d_pos.flatten(), constraints[key], block)
             y_bar = project(constraints[key], block)
             y_bar = y_bar.flatten()
-            print(y_bar)
-            d = y_bar - pos
-            eta = eta_max * np.exp(b * j)
-            pos = _pos + d * (1 + (eta - eta_min) / (eta_max - eta_min))
+
+            d = y_bar - c_pos
+            # eta = eta_max * np.exp(b * j)
+            # pos: np.ndarray = c_pos + d * max(
+            #     1, 1 + (eta - eta_min) / (eta_max - eta_min)
+            # )
+
+            # 固有値の逆数ぐらいで動かす
+            norm = d_pos.T @ d
+            dot = d.T @ A @ d
+            alpha = max((norm / dot), 1)
+            pos: np.ndarray = c_pos + d * alpha
+            # print(norm / dot, f"{alpha=}")
+
+            # if j == parameter.iter - 1:
+            #     pos = y_bar
 
             pos = pos.flatten()
             pos = list(pos[:n]) + [0] * len(fixed_nodes)
-            for node in fixed_nodes:
-                pos[node["index"]] = node[key]
-            position[key] = np.array(pos)
-        yield position, j
+            cur_position[key] = np.array(pos)
+            mn = np.amin(cur_position[key])
+            cur_position[key] -= mn
+            # pos = [(x, y) for x, y in zip(cur_position["x"], cur_position["y"])]
+            # plot_graph(nxgraph, pos, savedir, f"100_tree1{key}_{j}.png", aspect="equal")
+
         for i in range(n):
-            drawing.set_y(i, position["y"][i])
-            drawing.set_x(i, position["x"][i])
+            drawing.set_y(i, cur_position["y"][i])
+            drawing.set_x(i, cur_position["x"][i])
+        cpos = np.array(before_pos)
+        dpos = np.array([(x, y) for x, y in zip(cur_position["x"], cur_position["y"])])
+        diff = np.abs(cpos - dpos)
+        # print(diff)
+        # print(np.linalg.norm(diff))
+        if no_split and np.linalg.norm(diff) < 1e-6:
+            break
+        cnt += 1
+        if cnt % 10 == 0:
+            print(f"{cnt=}")
+    return cur_position
 
 
 if __name__ == "__main__":
     # main()
     # full_sgd_check_constraints()
-    tree()
+    # for i in range(100):
+    #     np.random.seed(i)
+    tree(0)
     # pass
