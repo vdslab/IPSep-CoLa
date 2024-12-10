@@ -1,16 +1,10 @@
 import * as cola from "webcola";
 import * as d3 from "d3";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
-import { pythonDataDir, loadJSON } from "../cola/loadJson.js";
+import { loadJSON } from "../cola/loadJson.js";
 import path from "path";
 
-const jsonDir = path.join(pythonDataDir, "json");
-const graphDir = path.join(
-  jsonDir,
-  "random_tree",
-  "2024-10-27",
-  "07:07:06.283826"
-);
+const graphDir = path.join("src", "data", "random_tree");
 const dirs = [];
 for (let node_n = 100; node_n <= 2000; node_n += 100) {
   dirs.push({
@@ -25,9 +19,9 @@ for (const { path: dirPath, basename } of dirs) {
     .map((_, i) => `node_n=${basename}_${i}.json`);
   const graphs = files.map((file) => {
     const graphJson = loadJSON(file, dirPath);
-    const align_const = graphJson.graph.alignment;
-    graphJson.graph.constraints =
-      graphJson.graph.constraints.concat(align_const);
+    // const align_const = graphJson.graph.alignment;
+    // graphJson.graph.constraints = align_const;
+    //   graphJson.graph.constraints.concat(align_const);
     const graph = graphJson.graph;
     const length = graphJson.length;
     const dist = graphJson.dist.map((row) => row.map((v) => v * length));
@@ -41,7 +35,7 @@ for (const { path: dirPath, basename } of dirs) {
     };
   });
 
-  const saveDir = path.join("src", "data", "align", "cola", basename);
+  const saveDir = path.join("result", basename);
   if (!existsSync(saveDir)) {
     mkdirSync(saveDir);
   }
@@ -52,7 +46,7 @@ for (const { path: dirPath, basename } of dirs) {
       .nodes(graph?.nodes)
       .links(graph?.links)
       .constraints(graph?.constraints)
-      .defaultNodeSize(1)
+      // .defaultNodeSize(1)
       // .constraints([])
       .distanceMatrix(dist)
       .start(10, 10, 10, 0, false, false);
