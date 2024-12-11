@@ -6,4 +6,3 @@ class SGDParameter:
         self.iter = iterator
         self.eps = eps
         self.seed = seed
-        self.rng = eg.Rng.seed_from(seed) if seed is not None else eg.Rng()
