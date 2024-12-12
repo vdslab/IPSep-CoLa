@@ -1,12 +1,8 @@
 import argparse
 import csv
 import itertools
-import json
-import math
-import os
 
 import matplotlib.pyplot as plt
-import networkx as nx
 
 from boxplot_2item import boxplot_2item_plot_only
 
@@ -15,6 +11,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('csv_file')
     parser.add_argument('out')
+    parser.add_argument('--title', default='')
     args = parser.parse_args()
 
     data = [row for row in csv.DictReader(open(args.csv_file))
@@ -33,7 +30,7 @@ def main():
         labels,
         ["Webcola", "FullSGD"],
     )
-    plt.title("Webcola stress vs FullSGD stress")
+    plt.title(args.title)
     plt.savefig(args.out)
 
 
