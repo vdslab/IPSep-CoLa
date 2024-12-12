@@ -4,7 +4,7 @@ import numpy as np
 
 
 def boxplot_2item_plot_only(data1, data2, labels, legend=["Data1", "Data2"]):
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(12, 6))
 
     width = 0.6
     gap = 0.1
@@ -38,6 +38,7 @@ if __name__ == "__main__":
     data1 = [np.random.normal(0, std, 100) for std in range(1, 3)]
     data2 = [np.random.normal(1, std, 100) for std in range(1, 3)]
 
-    boxplot_2item_plot_only(data1, data2, ["Group 1", "Group 2"], list(range(1, 3)))
+    boxplot_2item_plot_only(
+        data1, data2, ["Group 1", "Group 2"], list(range(1, 3)))
     plt.title("Boxplots for Two Sets of Data per Group")
     plt.savefig("boxplot_grouped.png")

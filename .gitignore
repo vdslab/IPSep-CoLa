@@ -23,3 +23,4 @@ egraph-rs
 !src/data/cola/stress/*.json
 *.png
 !src/data/random_tree/**
+data
