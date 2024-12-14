@@ -1,3 +1,4 @@
+import random
 import traceback
 
 import egraph as eg
@@ -17,13 +18,20 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     dist_list = nx_graph.graph['distance']
 
     eggraph, indices = nxgraph_to_eggraph(nx_graph)
-    drawing = eg.DrawingEuclidean2d.initial_placement(eggraph)
+    drawing = eg.ClassicalMds(eggraph, lambda _: 150).run_2d()
     dist = eg.DistanceMatrix(eggraph)
-    for i, u in enumerate(eggraph.node_indices()):
-        for j, v in enumerate(eggraph.node_indices()):
-            dist.set(u, v, dist_list[i][j])
+    for i, u in enumerate(nx_graph.nodes):
+        for j, v in enumerate(nx_graph.nodes):
+            dist.set(indices[u], indices[v], dist_list[j][i])
+
     sgd = eg.FullSgd.new_with_distance_matrix(dist)
     rng = eg.Rng.seed_from(parameter.seed)
+
+    size = []
+    if overlap_removal:
+        for i, u in enumerate(nx_graph.nodes):
+            shape = nx_graph.nodes[u]['shape']
+            size.append([shape['width'] + 10, shape['height'] + 10])
 
     def step(eta):
         try:
@@ -33,10 +41,12 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
             C = get_constraints_dict(nx_graph.graph["constraints"],
                                      default_gap=20)
             if overlap_removal:
-                for axis, item in generate_overlap_removal_constraints(drawing):
+                for axis, item in generate_overlap_removal_constraints(drawing, size,
+                                                                       'y' if random.random() < 0.5 else 'x'):
                     C[axis].append(item)
 
-            constraints = {"x": None, "y": None, "sq": {"x": None, "y": None}}
+            constraints = {"x": None, "y": None,
+                           "sq": {"x": None, "y": None}}
             if C.get("y") is not None and len(C["y"]) > 0:
                 constraints["y"] = Constraints(C["y"], node_num)
             if C.get("x") is not None and len(C["x"]) > 0:
