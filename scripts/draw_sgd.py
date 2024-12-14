@@ -10,6 +10,8 @@ from sgd.full import sgd
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dest', default='.')
+    parser.add_argument('--overlap-removal',
+                        action=argparse.BooleanOptionalAction)
     parser.add_argument('input', nargs='+')
     args = parser.parse_args()
 
@@ -17,7 +19,7 @@ def main():
     for filepath in args.input:
         basename = os.path.basename(filepath)
         graph = nx.node_link_graph(json.load(open(filepath)))
-        pos = sgd(graph)
+        pos = sgd(graph, overlap_removal=args.overlap_removal)
         json.dump(pos,
                   open(os.path.join(args.dest, basename), 'w'),
                   ensure_ascii=False)
