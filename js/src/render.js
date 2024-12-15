@@ -1,5 +1,6 @@
 import { createCanvas } from "@napi-rs/canvas";
 import { readFile, writeFile } from "node:fs/promises";
+import { parseArgs } from "node:util";
 
 function render(graph, drawing) {
   const width = 1200;
@@ -63,12 +64,21 @@ function render(graph, drawing) {
 }
 
 (async () => {
-  const graph = JSON.parse(
-    await readFile("data/graph/networkx/les_miserables_graph.json"),
-  );
-  const drawing = JSON.parse(
-    await readFile("data/drawing/sgd/networkx/les_miserables_graph.json"),
-  );
+  const { values } = parseArgs({
+    options: {
+      graphFile: {
+        type: "string",
+      },
+      drawingFile: {
+        type: "string",
+      },
+      output: {
+        type: "string",
+      },
+    },
+  });
+  const graph = JSON.parse(await readFile(values.graphFile));
+  const drawing = JSON.parse(await readFile(values.drawingFile));
   const pngData = await render(graph, drawing);
-  writeFile("result/drawing.png", pngData);
+  writeFile(values.output, pngData);
 })();
