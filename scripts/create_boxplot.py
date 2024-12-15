@@ -14,8 +14,7 @@ def main():
     parser.add_argument('--title', default='')
     args = parser.parse_args()
 
-    data = [row for row in csv.DictReader(open(args.csv_file))
-            if row['type'] == 'random_tree']
+    data = [row for row in csv.DictReader(open(args.csv_file))]
     data.sort(key=lambda row: (row['method'], int(row['n'])))
     labels = sorted({int(row['n']) for row in data})
     methods = ['sgd', 'webcola']

@@ -18,12 +18,12 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     dist_list = nx_graph.graph['distance']
 
     eggraph, indices = nxgraph_to_eggraph(nx_graph)
-    drawing = eg.ClassicalMds(eggraph, lambda _: 150).run_2d()
     dist = eg.DistanceMatrix(eggraph)
     for i, u in enumerate(nx_graph.nodes):
         for j, v in enumerate(nx_graph.nodes):
             dist.set(indices[u], indices[v], dist_list[j][i])
 
+    drawing = eg.ClassicalMds.new_with_distance_matrix(dist).run_2d()
     sgd = eg.FullSgd.new_with_distance_matrix(dist)
     rng = eg.Rng.seed_from(parameter.seed)
 

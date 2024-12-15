@@ -17,8 +17,7 @@ def main():
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     writer = csv.writer(open(args.out, 'w'))
     writer.writerow(['name', 'method', 'type', 'n', 'value'])
-    data = [row for row in csv.DictReader(open(args.csv_file))
-            if row['type'] == 'random_tree']
+    data = [row for row in csv.DictReader(open(args.csv_file))]
     methods = ['sgd', 'webcola']
     for method in methods:
         for row in data:
