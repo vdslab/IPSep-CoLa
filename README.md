@@ -54,23 +54,17 @@ do
 done
 ```
 
+## Generate sgd cluster-no-overlap drawing
+
+```
+parallel --bar 'python scripts/draw_sgd.py --dest=data/drawing/sgd/cluster/{1} --overlap-removal --cluster-overlap-removal data/graph/cluster/{1}/node_n={1}_{2}.json' ::: $(seq -f '%04.0f' 100 100 2000) ::: $(seq -f '%02.0f' 0 19)
+```
+
 ## Plot to PNG
 
 ```
-for method in sgd webcola
-do
-  for type in random_tree overlap
-  do
-    for n in `seq -f '%04.0f' 100 100 2000`
-    do
-      mkdir -p result/plot/${method}/${type}/${n}
-      for i in `seq -f '%02.0f' 0 19`
-      do
-        node js/src/render.js --graphFile=data/graph/${type}/${n}/node_n\=${n}_${i}.json --drawingFile=data/drawing/${method}/${type}/${n}/node_n\=${n}_${i}.json --output=result/plot/${method}/${type}/${n}/node_n=${n}_${i}.png
-      done
-    done
-  done
-done
+parallel --bar 'mkdir -p result/plot/{1}/{2}/{3}' ::: sgd ::: cluster ::: $(seq -f '%04.0f' 100 100 2000)
+parallel --bar 'node js/src/render.js --graphFile=data/graph/{2}/{3}/node_n\={3}_{4}.json --drawingFile=data/drawing/{1}/{2}/{3}/node_n\={3}_{4}.json --output=result/plot/{1}/{2}/{3}/node_n={3}_{4}.png' ::: sgd ::: cluster ::: $(seq -f '%04.0f' 100 100 2000) ::: $(seq -f '%02.0f' 0 19)
 ```
 
 ## Stress comparison

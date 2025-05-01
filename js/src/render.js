@@ -1,6 +1,7 @@
 import { createCanvas } from "@napi-rs/canvas";
 import { readFile, writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
+import * as d3 from "d3";
 
 function render(graph, drawing) {
   const width = 2000;
@@ -32,6 +33,39 @@ function render(graph, drawing) {
     -bottom - contentHeight / 2 + height / 2,
   );
 
+  const nodeColor = d3.scaleOrdinal(d3.schemeCategory10);
+  const groups = {};
+  for (const node of graph.nodes) {
+    if ("group" in node) {
+      nodeColor(node.group);
+      if (!(node.group in groups)) {
+        groups[node.group] = { id: node.group, nodes: [] };
+      }
+      groups[node.group].nodes.push(node.id);
+    }
+  }
+
+  for (const group of Object.values(groups)) {
+    let left = Infinity;
+    let right = -Infinity;
+    let bottom = Infinity;
+    let top = -Infinity;
+    for (const u of group.nodes) {
+      const [x, y] = drawing[u];
+      const { width: w, height: h } = graph.nodes[u].shape;
+      left = Math.min(left, x - w / 2);
+      right = Math.max(right, x + w / 2);
+      bottom = Math.min(bottom, y - h / 2);
+      top = Math.max(top, y + h / 2);
+    }
+    ctx.beginPath();
+    ctx.rect(left, bottom, right - left, top - bottom);
+    const c = d3.color(nodeColor(group.id));
+    c.opacity = 0.2;
+    ctx.fillStyle = c.toString();
+    ctx.fill();
+  }
+
   for (const link of graph.links) {
     const [x1, y1] = drawing[link.source];
     const [x2, y2] = drawing[link.target];
@@ -49,7 +83,11 @@ function render(graph, drawing) {
     ctx.rect(x - w / 2, y - h / 2, w, h);
     ctx.strokeStyle = "#000";
     ctx.stroke();
-    ctx.fillStyle = "#fff";
+    if ("group" in node) {
+      ctx.fillStyle = nodeColor(node.group);
+    } else {
+      ctx.fillStyle = "#fff";
+    }
     ctx.fill();
   }
 

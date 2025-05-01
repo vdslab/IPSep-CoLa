@@ -52,6 +52,13 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         if overlap_removal:
             eg.project_rectangle_no_overlap_constraints_2d(
                 drawing, lambda u, d: size[u][d])
+        if clusters is not None:
+            eg.project_clustered_rectangle_no_overlap_constraints(
+                eggraph,
+                drawing,
+                lambda u: clusters[u],
+                lambda u, d: size[u][d],
+            )
 
     pos = {u: [drawing.x(indices[u]), drawing.y(indices[u])]
            for u in nx_graph.nodes}
