@@ -3,8 +3,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
 
 function render(graph, drawing) {
-  const width = 1200;
-  const height = 1200;
+  const width = 2000;
+  const height = 2000;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
@@ -78,6 +78,14 @@ function render(graph, drawing) {
     },
   });
   const graph = JSON.parse(await readFile(values.graphFile));
+  for (const node of graph.nodes) {
+    if (!node.shape) {
+      node.shape = {
+        width: 30,
+        height: 30,
+      };
+    }
+  }
   const drawing = JSON.parse(await readFile(values.drawingFile));
   const pngData = await render(graph, drawing);
   writeFile(values.output, pngData);

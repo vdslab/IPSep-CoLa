@@ -10,69 +10,85 @@ use rye
 rye sync
 ```
 
-## stress、violationの比較方法
+# Workflow
 
-実行するファイル
+## Generate graphs
 
-- `js/src/cola/calc_position_random_tree.js`
-- `src/data/calc_stress.py`
-- `src/compare_stress.py`
-- `src/sgd/check_constraints.py`
-- `src/compare_violation.py`
+```
+python src/data/generate_overlap_graphs.py
+```
 
+## Generate sgd tree drawing
 
-データは`src/data/random_tree`の中
+```
+for n in `seq -f '%04.0f' 100 100 2000`
+do
+  python scripts/draw_sgd.py --dest data/drawing/sgd/random_tree/$n data/graph/random_tree/$n/*
+done
+```
 
-## 1. webcola
+## Generate webcola tree drawing
 
-### 1-1. 座標計算、保存
+```
+for n in `seq -f '%04.0f' 100 100 2000`
+do
+  python scripts/draw_webcola.py --dest data/drawing/webcola/random_tree/$n data/graph/random_tree/$n/*
+done
+```
 
-- `js/src/cola/calc_position_random_tree.js`
-- 9行目がノード数の範囲
-- 38行目が保存先ディレクトリ、最後のbasenameは必須
-- ファイル`{node_n}/{i}.json`が生成される
+## Generate sgd no-overlap drawing
 
-### 1-2. ストレス計算、保存
+```
+for n in `seq -f '%04.0f' 100 100 2000`
+do
+  python scripts/draw_sgd.py --dest data/drawing/sgd/overlap/$n --overlap-removal data/graph/overlap/$n/*
+done
+```
 
-- `src/data/calc_stress.py`
-- 55行目は「1. webcolaの座標計算」で指定した保存先ディレクトリ+`{node_n}`
-- 73行目で保存先を指定。ファイル名はそのままにしておく
+## Generate webcola no-overlap drawing
 
-## 2. ipsepcolaの座標+ストレス保存
+```
+for n in `seq -f '%04.0f' 100 100 2000`
+do
+  python scripts/draw_webcola.py --dest data/drawing/webcola/overlap/$n --overlap-removal data/graph/overlap/$n/*
+done
+```
 
-- `strss_position_{node_n}.json`という名前で保存
-- 中身は`{positions: [[[x11,y11], ...], [[x21, y21], ...]], stresses:[s1, s2, ...]}`
+## Plot to PNG
 
-## 3. ストレス比較
+```
+for method in sgd webcola
+do
+  for type in random_tree overlap
+  do
+    for n in `seq -f '%04.0f' 100 100 2000`
+    do
+      mkdir -p result/plot/${method}/${type}/${n}
+      for i in `seq -f '%02.0f' 0 19`
+      do
+        node js/src/render.js --graphFile=data/graph/${type}/${n}/node_n\=${n}_${i}.json --drawingFile=data/drawing/${method}/${type}/${n}/node_n\=${n}_${i}.json --output=result/plot/${method}/${type}/${n}/node_n=${n}_${i}.png
+      done
+    done
+  done
+done
+```
 
-- `src/compare_stress.py`
-- 21行目：保存先ディレクトリの指定
-- 22行目：「1-1. 座標計算」で指定した保存先ディレクトリ。ノード数はいらない
-- 23行目：`strss_position_{node_n}.json`があるディレクトリを指定
-- 27行目：ノード数の範囲
+## Stress comparison
 
+```
+for type in random_tree overlap
+do
+  python scripts/calc_stress.py data/graph/$type.csv result/stress/$type-0100-2000.csv
+  python scripts/create_boxplot.py result/stress/$type-0100-2000.csv result/stress/$type-0100-2000.png
+done
+```
 
-## 4. violationの計算
+## Violation comparison
 
-- `src/sgd/check_constraints.py`
-- sgd、webcolaという関数で、それぞれのviolationを計算している
-
-- 21行目：グラフのデータがあるディレクトリ
-- 22行目：保存先のディレクトリ
-
-### 4-1. sgd
-
-- 29行目：「2. ipsepcolaの座標計算+ストレス計算」で保存したファイルが存在するディレクトリを指定
-- 33行目：ノード数の範囲指定
-
-### 4-2. webcola
-
-- 66行目：「1-1. 座標計算」で指定したディレクトリ。配下に`{node_n}`というディレクトリがあるもの
-- 68行目：ノード数の範囲
-
-## 5. violationの比較
-
-- `src/compare_violation.py`
-- 22行目：保存先のディレクトリ
-- 23行目：「4. violationの計算」で保存先に指定したディレクトリ
-- 28行目：ノード数の範囲
+```
+for type in random_tree
+do
+  python scripts/calc_violation.py data/graph/$type.csv result/stress/$type-0100-2000.csv
+  python scripts/create_boxplot.py result/stress/$type-0100-2000.csv result/stress/$type-0100-2000.png
+done
+```

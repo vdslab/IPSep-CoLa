@@ -23,9 +23,10 @@ def main():
         for row in data:
             graph_filepath = os.path.join(os.path.dirname(args.csv_file),
                                           row['path'])
+            print(method, graph_filepath)
             graph = nx.node_link_graph(json.load(open(graph_filepath)))
             drawing_filepath = f'data/drawing/{method}/{
-                row['type']}/{row['n']}/{row['name']}'
+                row['type']}/{int(row['n']):04}/{row['name']}'
             drawing = json.load(open(drawing_filepath))
             s = 0
             nodes = list(graph.nodes)

@@ -38,11 +38,14 @@ function layout(graph, options) {
       output: {
         type: "string",
       },
+      overlapRemoval: {
+        type: "boolean",
+      },
     },
   });
   const graph = JSON.parse(await readFile(values.graphFile));
   const drawing = layout(graph, {
-    overlapRemvoal: true,
+    overlapRemvoal: values.overlapRemoval,
   });
   writeFile(values.output, JSON.stringify(drawing));
 })();

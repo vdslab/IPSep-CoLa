@@ -2,6 +2,7 @@ import argparse
 import csv
 import itertools
 
+import matplotlib
 import matplotlib.pyplot as plt
 
 from boxplot_2item import boxplot_2item_plot_only
@@ -17,12 +18,13 @@ def main():
     data = [row for row in csv.DictReader(open(args.csv_file))]
     data.sort(key=lambda row: (row['method'], int(row['n'])))
     labels = sorted({int(row['n']) for row in data})
-    methods = ['sgd', 'webcola']
     values = {
         method: [[float(row['value']) for row in rows]
                  for _, rows in itertools.groupby(method_rows, lambda row: row['n'])]
         for method, method_rows in itertools.groupby(data, lambda row: row['method'])
     }
+
+    matplotlib.use('agg')
     boxplot_2item_plot_only(
         values['webcola'],
         values['sgd'],

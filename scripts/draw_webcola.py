@@ -1,10 +1,7 @@
 import argparse
 import json
 import os
-
-import networkx as nx
-
-from sgd.full import sgd
+import subprocess
 
 
 def main():
@@ -20,12 +17,12 @@ def main():
     for filepath in args.input:
         print(filepath)
         basename = os.path.basename(filepath)
-        graph = nx.node_link_graph(json.load(open(filepath)))
-        pos = sgd(graph, iterations=args.iterations,
-                  overlap_removal=args.overlap_removal)
-        json.dump(pos,
-                  open(os.path.join(args.dest, basename), 'w'),
-                  ensure_ascii=False)
+        command = ['node', 'js/src/draw_webcola.js',
+                   '--graphFile', filepath,
+                   '--output', os.path.join(args.dest, basename)]
+        if args.overlap_removal:
+            command.append('--overlapRemoval')
+        subprocess.run(command)
 
 
 if __name__ == '__main__':

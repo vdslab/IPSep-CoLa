@@ -20,12 +20,12 @@ def main():
             for u in graph.nodes:
                 graph.nodes[u]['shape'] = {
                     'type': 'rect',
-                    'width': 30,
-                    'height': 30,
+                    'width': 20,
+                    'height': 20,
                 }
 
-            name = f'node_n={n}_{i}.json'
-            graphpath = f'data/graph/overlap/{n}/{name}'
+            name = f'node_n={n:04}_{i:02}.json'
+            graphpath = f'data/graph/overlap/{n:04}/{name}'
             data = nx.node_link_data(graph)
             for node in data['nodes']:
                 node['id'] = str(node['id'])
@@ -34,7 +34,7 @@ def main():
                 link['target'] = str(link['target'])
             os.makedirs(os.path.dirname(graphpath), exist_ok=True)
             json.dump(data, open(graphpath, 'w'))
-            writer.writerow([name, 'overlap', n, f'overlap/{n}/{name}'])
+            writer.writerow([name, 'overlap', n, f'overlap/{n:04}/{name}'])
 
 
 if __name__ == '__main__':
