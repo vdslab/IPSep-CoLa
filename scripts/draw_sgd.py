@@ -21,7 +21,7 @@ def main():
     os.makedirs(args.dest, exist_ok=True)
     for filepath in args.input:
         basename = os.path.basename(filepath)
-        graph = nx.node_link_graph(json.load(open(filepath)))
+        graph = nx.node_link_graph(json.load(open(filepath)), edges='links')
         clusters = None
         if args.cluster_overlap_removal:
             clusters = [graph.nodes[u]['group'] for u in graph.nodes]

@@ -5,12 +5,17 @@ import { parseArgs } from "node:util";
 
 function layout(graph, options) {
   const overlapRemvoal = options?.overlapRemvoal || false;
+  const clusters = options?.clusters || null;
   const d3cola = cola
     .d3adaptor(d3)
     .nodes(graph.nodes)
     .links(graph.links)
     .constraints(graph.graph.constraints)
-    .distanceMatrix(graph.graph.distance);
+    .linkDistance(100);
+
+  if (clusters) {
+    d3cola.groups(clusters);
+  }
 
   if (overlapRemvoal) {
     for (const node of graph.nodes) {
@@ -41,11 +46,40 @@ function layout(graph, options) {
       overlapRemoval: {
         type: "boolean",
       },
+      clusterOverlapRemoval: {
+        type: "boolean",
+      },
     },
   });
   const graph = JSON.parse(await readFile(values.graphFile));
+  for (const link of graph.links) {
+    link.source = +link.source;
+    link.target = +link.target;
+  }
+  let clusters;
+  if (values.clusterOverlapRemoval) {
+    clusters = {};
+    graph.nodes.forEach((node, i) => {
+      if (!(node.group in clusters)) {
+        clusters[node.group] = {
+          id: node.group,
+          leaves: [],
+        };
+      }
+      clusters[node.group].leaves.push(i);
+    });
+    clusters = Object.values(clusters);
+    for (
+      let i = graph.nodes.length;
+      i < graph.nodes.length + clusters.length * 2;
+      ++i
+    ) {
+      graph.graph.distance.push([]);
+    }
+  }
   const drawing = layout(graph, {
     overlapRemvoal: values.overlapRemoval,
+    clusters,
   });
   writeFile(values.output, JSON.stringify(drawing));
 })();
