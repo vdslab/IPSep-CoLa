@@ -2,6 +2,7 @@
 このモジュールは、グラフ描画に円制約を適用します。
 """
 
+
 def project_circle_constraints(drawing, circle_constraints, indices):
     """
     描画に円制約を適用します。
@@ -21,10 +22,13 @@ def project_circle_constraints(drawing, circle_constraints, indices):
     y = [drawing.y(j) for j in range(n)]
     current_centers = []
     current_radii = []
-    for nodes, r in circle_constraints:
-        circle_nodes = [indices[v] for v in nodes]
-        cx = sum([x[v] for v in circle_nodes]) / len(circle_nodes)
-        cy = sum([y[v] for v in circle_nodes]) / len(circle_nodes)
+    for circle_nodes, r, center in circle_constraints:
+        if center is None:
+            cx = sum([x[v] for v in circle_nodes]) / len(circle_nodes)
+            cy = sum([y[v] for v in circle_nodes]) / len(circle_nodes)
+        else:
+            cx = x[center]
+            cy = y[center]
         current_centers.append((cx, cy))
         current_radii.append(r)
         for v in circle_nodes:
