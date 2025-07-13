@@ -9,8 +9,10 @@ def save_animation(
     positions,
     circle_centers,
     circle_radii,
+    aspect="equal",
 ):
     fig, ax = plt.subplots(figsize=(10, 10))
+    ax.set_aspect(aspect)
 
     def update(i):
         ax.clear()
@@ -25,9 +27,7 @@ def save_animation(
         if i < len(circle_centers) and i < len(circle_radii):
             for (cx, cy), r in zip(circle_centers[i], circle_radii[i]):
                 ax.plot(cx, cy, "ro")  # Plot the center
-                circle = plt.Circle(
-                    (cx, cy), r, color="r", fill=False, linestyle="--"
-                )
+                circle = plt.Circle((cx, cy), r, color="r", fill=False, linestyle="--")
                 ax.add_artist(circle)
         ax.set_title(f"Iteration {i}")
         plt.gca().invert_yaxis()
