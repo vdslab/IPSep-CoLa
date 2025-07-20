@@ -32,6 +32,8 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for i, u in enumerate(nx_graph.nodes):
             shape = nx_graph.nodes[u]["shape"]
             size.append([shape["width"] + 5, shape["height"] + 5])
+            shape = nx_graph.nodes[u]["shape"]
+            size.append([shape["width"] + 5, shape["height"] + 5])
 
     x_constraints = [
         eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
@@ -69,11 +71,14 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     circle_radii = []
 
     for i in range(parameter.iter):
+        print(f"iter:{i}")
         sgd_scheduler.step(step)
         # eg.project_1d(drawing, 0, x_constraints)
         # eg.project_1d(drawing, 1, y_constraints)
         if overlap_removal:
             eg.project_rectangle_no_overlap_constraints_2d(
+                drawing, lambda u, d: size[u][d]
+            )
                 drawing, lambda u, d: size[u][d]
             )
         if clusters is not None:
