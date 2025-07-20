@@ -79,8 +79,6 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
             eg.project_rectangle_no_overlap_constraints_2d(
                 drawing, lambda u, d: size[u][d]
             )
-                drawing, lambda u, d: size[u][d]
-            )
         if clusters is not None:
             eg.project_clustered_rectangle_no_overlap_constraints(
                 eggraph,
