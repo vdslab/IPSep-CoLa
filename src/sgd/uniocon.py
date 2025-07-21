@@ -16,6 +16,7 @@ from .projection.distance_constraints import project_distance_constraints
 def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, seed=0):
     parameter = SGDParameter(iterator=iterations, eps=eps, seed=seed)
     dist_list = nx_graph.graph["distance"]
+    print(nx_graph)
 
     eggraph, indices = nxgraph_to_eggraph(nx_graph)
     dist = eg.DistanceMatrix(eggraph)
@@ -33,17 +34,16 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for i, u in enumerate(nx_graph.nodes):
             shape = nx_graph.nodes[u]["shape"]
             size.append([shape["width"] + 5, shape["height"] + 5])
-            shape = nx_graph.nodes[u]["shape"]
-            size.append([shape["width"] + 5, shape["height"] + 5])
 
-    x_constraints = [
+    # 制約の種類ごとに分割
+    x_constraints: list = [
         eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
-        for c in nx_graph.graph["constraints"]
+        for c in nx_graph.graph["layer_constraints"]
         if c.get("axis", "") == "x"
     ]
-    y_constraints = [
+    y_constraints: list = [
         eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
-        for c in nx_graph.graph["constraints"]
+        for c in nx_graph.graph["layer_constraints"]
         if c.get("axis", "") == "y"
     ]
 
@@ -65,43 +65,15 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         parameter.eps,  # eps: eta_min = eps * min d[i, j] ^ 2
     )
 
-    # pos = {u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes}
-
-    positions = []
-    # circle_centers = []
-    # circle_radii = []
-
     for i in range(parameter.iter):
         print(f"iter:{i}")
         sgd_scheduler.step(step)
-        # eg.project_1d(drawing, 0, x_constraints)
-        # eg.project_1d(drawing, 1, y_constraints)
-        # if overlap_removal:
-        #     eg.project_rectangle_no_overlap_constraints_2d(
-        #         drawing, lambda u, d: size[u][d]
-        #     )
-        # if clusters is not None:
-        #     eg.project_clustered_rectangle_no_overlap_constraints(
-        #         eggraph,
-        #         drawing,
-        #         lambda u: clusters[u],
-        #         lambda u, d: size[u][d],
-        #     )
-
-        project_distance_constraints(drawing, overlap_constraints, indices)
-
-        #     current_centers, current_radii = project_circle_constraints(
-        #         drawing, circle_constraints, indices
-        #     )
-        #     circle_centers.append(current_centers)
-        #     circle_radii.append(current_radii)
-
-        pos = {
-            u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes
-        }
-        positions.append(pos)
-    save_animation("sgd_animation.gif", nx_graph, positions, [], [])
+        # for constraint in x_constraints:
+        #     eg.project_1d(drawing, 0, [constraint])
+        # for constraint in y_constraints:
+        #     eg.project_1d(drawing, 1, [constraint])
+        for constraint in overlap_constraints:
+            project_distance_constraints(drawing, [constraint], indices)
 
     pos = {u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes}
-    # print(pos)
     return pos
