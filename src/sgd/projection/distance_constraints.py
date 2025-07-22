@@ -1,13 +1,13 @@
 import numpy as np
 
 
-def project_distance_constraints(drawing, constraints, indices, eps=5e-1):
+def project_distance_constraints(drawing, constraints, indices):
     for v, u, gap in constraints:
         posv = np.array([drawing.x(v), drawing.y(v)])
         posu = np.array([drawing.x(u), drawing.y(u)])
-        dist = np.linalg.norm(posv - posu)
+        dist = max(0.01, np.linalg.norm(posu - posv))
         if dist < gap:
-            unit = (posv - posu) / dist
+            unit = (posu - posv) / dist
             r = (dist - gap) / 2 * unit
             posv += r
             posu -= r
