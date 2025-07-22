@@ -42,17 +42,22 @@ try:
                 layer_constraint.append({"axis": "y", "left": v, "right": u, "gap": 2})
     graph.graph["layer_constraints"] = layer_constraint
 
-    overlap_constraints = []
+    distance_constraints = []
     nodes = list(graph.nodes)
     for i in range(len(nodes)):
         for j in range(i + 1, len(nodes)):
-            if v != u:
-                overlap_constraints.append(
-                    {"type": "overlap", "left": v, "right": u, "gap": 0.5}
+            if i != j:
+                distance_constraints.append(
+                    {
+                        "type": "distance",
+                        "left": nodes[i],
+                        "right": nodes[j],
+                        "gap": 0.5,
+                    }
                 )
-    graph.graph["overlap_constraints"] = overlap_constraints
+    graph.graph["distance_constraints"] = distance_constraints
 
-    graph.graph["constraints"] = layer_constraint + overlap_constraints
+    graph.graph["constraints"] = layer_constraint + distance_constraints
     # 3. NetworkXグラフをJSON形式に適した辞書に変換
     # ノードとリンクのデータ（最も一般的な形式）
     data_for_json = nx.node_link_data(graph)
