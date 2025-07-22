@@ -27,17 +27,25 @@ def calc_stress(graph, drawing):
 
 
 def calc_violation(graph, drawing):
-    s = 0
+    ls = 0
     for constraint in graph.graph["layer_constraints"]:
         u = constraint["left"]
         v = constraint["right"]
         gap = constraint["gap"]
         if constraint["axis"] == "x":
-            s += max(0, gap - (drawing[v][0] - drawing[u][0]))
+            ls += max(0, gap - (drawing[v][0] - drawing[u][0]))
         else:
-            s += max(0, gap - (drawing[v][1] - drawing[u][1]))
-    s /= len(graph.graph["layer_constraints"])
-    return s
+            ls += max(0, gap - (drawing[v][1] - drawing[u][1]))
+    ls /= len(graph.graph["layer_constraints"])
+    ovs = 0
+    for constraint in graph.graph["distance_constraints"]:
+        v, u, gap = constraint["left"], constraint["right"], constraint["gap"]
+        dx = drawing[v][0] - drawing[u][0]
+        dy = drawing[v][1] - drawing[u][1]
+        dist = math.hypot(dx, dy)
+        ovs += max(0, gap - dist)
+    ovs /= len(graph.graph["distance_constraints"])
+    return ls + ovs
 
 
 def main():
@@ -54,13 +62,27 @@ def main():
     uniocon_sgd_stresses = []
     uniocon_sgd_violations = []
     for i in range(args.iterations):
-        pos = constrained_sgd(graph, seed=i)
-        constrained_sgd_stresses.append(calc_stress(graph, pos))
-        constrained_sgd_violations.append(calc_violation(graph, pos))
+        poscs = constrained_sgd(graph, seed=i)
+        scs = calc_stress(graph, poscs)
+        vcs = calc_violation(graph, poscs)
+        constrained_sgd_stresses.append(scs)
+        constrained_sgd_violations.append(vcs)
 
-        pos = uniocon_sgd(graph, seed=i)
-        uniocon_sgd_stresses.append(calc_stress(graph, pos))
-        uniocon_sgd_violations.append(calc_violation(graph, pos))
+        posu = uniocon_sgd(graph, seed=i)
+        su = calc_stress(graph, posu)
+        vu = calc_violation(graph, posu)
+        uniocon_sgd_stresses.append(su)
+        uniocon_sgd_violations.append(vu)
+        json.dump(
+            {
+                "seed": i,
+                "iteration": args.iterations,
+                "unicon": {"stress": su, "violation": vu, "drawing": posu},
+                "constrained_sgd": {"stress": scs, "violation": vcs, "drawing": poscs},
+            },
+            open(f"dest/compare/overlap_layer/compare_seed{i}.json", "w"),
+        )
+        print(f"{scs=} {vcs=} {su=} {vu=}")
 
     print(constrained_sgd_stresses)
     print(uniocon_sgd_stresses)
