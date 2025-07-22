@@ -47,10 +47,10 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         if c.get("axis", "") == "y"
     ]
 
-    overlap_constraints = [
+    distance_constraints = [
         (indices[c["left"]], indices[c["right"]], c["gap"])
-        for c in nx_graph.graph["overlap_constraints"]
-        if c.get("type", "") == "overlap"
+        for c in nx_graph.graph["distance_constraints"]
+        if c.get("type", "") == "distance"
     ]
 
     def step(eta):
@@ -68,12 +68,12 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     for i in range(parameter.iter):
         print(f"iter:{i}")
         sgd_scheduler.step(step)
-        # for constraint in x_constraints:
-        #     eg.project_1d(drawing, 0, [constraint])
-        # for constraint in y_constraints:
-        #     eg.project_1d(drawing, 1, [constraint])
-        for constraint in overlap_constraints:
+        for constraint in distance_constraints:
             project_distance_constraints(drawing, [constraint], indices)
+        for constraint in x_constraints:
+            eg.project_1d(drawing, 0, [constraint])
+        for constraint in y_constraints:
+            eg.project_1d(drawing, 1, [constraint])
 
     pos = {u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes}
     return pos

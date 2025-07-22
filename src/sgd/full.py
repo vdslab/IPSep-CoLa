@@ -38,19 +38,18 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
 
     x_constraints = [
         eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
-        for c in nx_graph.graph["constraints"]
+        for c in nx_graph.graph["layer_constraints"]
         if c.get("axis", "") == "x"
     ]
     y_constraints = [
         eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
-        for c in nx_graph.graph["constraints"]
+        for c in nx_graph.graph["layer_constraints"]
         if c.get("axis", "") == "y"
     ]
 
-    overlap_constraints = [
+    distance_constraints = [
         (indices[c["left"]], indices[c["right"]], c["gap"])
-        for c in nx_graph.graph["overlap_constraints"]
-        if c.get("type", "") == "overlap"
+        for c in nx_graph.graph["distance_constraints"]
     ]
 
     def step(eta):
@@ -74,8 +73,7 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     for i in range(parameter.iter):
         print(f"iter:{i}")
         sgd_scheduler.step(step)
-        # eg.project_1d(drawing, 0, x_constraints)
-        # eg.project_1d(drawing, 1, y_constraints)
+        print("projectiong")
         # if overlap_removal:
         #     eg.project_rectangle_no_overlap_constraints_2d(
         #         drawing, lambda u, d: size[u][d]
@@ -88,7 +86,10 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         #         lambda u, d: size[u][d],
         #     )
 
-        project_distance_constraints(drawing, overlap_constraints, indices)
+        project_distance_constraints(drawing, distance_constraints, indices)
+        eg.project_1d(drawing, 0, x_constraints)
+        eg.project_1d(drawing, 1, y_constraints)
+        print("+++ projected")
 
         #     current_centers, current_radii = project_circle_constraints(
         #         drawing, circle_constraints, indices
@@ -96,12 +97,13 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         #     circle_centers.append(current_centers)
         #     circle_radii.append(current_radii)
 
-        pos = {
-            u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes
-        }
-        positions.append(pos)
-    save_animation("sgd_animation.gif", nx_graph, positions, [], [])
+    #     pos = {
+    #         u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes
+    #     }
+    #     positions.append(pos)
+    # save_animation("sgd_animation.gif", nx_graph, positions, [], [])
+
+    # import math
 
     pos = {u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes}
-    # print(pos)
     return pos
