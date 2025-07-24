@@ -1,4 +1,5 @@
 import argparse
+import glob
 import itertools
 import json
 import math
@@ -80,21 +81,9 @@ def main():
                 "unicon": {"stress": su, "violation": vu, "drawing": posu},
                 "constrained_sgd": {"stress": scs, "violation": vcs, "drawing": poscs},
             },
-            open(f"dest/compare/overlap_layer/compare_seed{i}.json", "w"),
+            open(f"dest/compare/y-layer/compare_seed{i}.json", "w"),
         )
         print(f"{scs=} {vcs=} {su=} {vu=}")
-
-    print(constrained_sgd_stresses)
-    print(uniocon_sgd_stresses)
-    matplotlib.use("agg")
-    boxplot_2item_plot_only(
-        [constrained_sgd_stresses, constrained_sgd_violations],
-        [uniocon_sgd_stresses, uniocon_sgd_violations],
-        ["stress", "violation"],
-        ["Constrained SGD", "UNICON"],
-    )
-    plt.savefig(f"{os.path.splitext(args.out_json)[0]}.png")
-
 
 if __name__ == "__main__":
     main()
