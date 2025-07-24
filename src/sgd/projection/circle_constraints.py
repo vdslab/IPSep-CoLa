@@ -3,7 +3,7 @@
 """
 
 
-def project_circle_constraints(drawing, circle_constraints, indices):
+def project_circle_constraints(drawing, circle_constraints, indices, centric=True):
     """
     描画に円制約を適用します。
 
@@ -20,12 +20,21 @@ def project_circle_constraints(drawing, circle_constraints, indices):
     n = drawing.len()
     x = [drawing.x(j) for j in range(n)]
     y = [drawing.y(j) for j in range(n)]
+    if centric:
+        centerX = (max(x) + min(x)) / 2
+        centerY = (max(y) + min(y)) / 2
+        x = [centerX - xx for xx in x]
+        y = [centerY - yy for yy in y]
     current_centers = []
     current_radii = []
     for circle_nodes, r, center in circle_constraints:
         if center is None:
-            cx = sum([x[v] for v in circle_nodes]) / len(circle_nodes)
-            cy = sum([y[v] for v in circle_nodes]) / len(circle_nodes)
+            if centric:
+                cx = centerX
+                cy = centerY
+            else:
+                cx = sum([x[v] for v in circle_nodes]) / len(circle_nodes)
+                cy = sum([y[v] for v in circle_nodes]) / len(circle_nodes)
         else:
             cx = x[center]
             cy = y[center]
