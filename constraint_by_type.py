@@ -33,6 +33,7 @@ try:
     que = deque([deg_max_node])
     visit = set([deg_max_node])
     layer_constraint = []
+    layer_distance_constraint = []
     while que:
         v = que.popleft()
         for u in graph.neighbors(v):
@@ -40,6 +41,7 @@ try:
                 visit.add(u)
                 que.append(u)
                 layer_constraint.append({"axis": "y", "left": v, "right": u, "gap": 2})
+                layer_distance_constraint
     graph.graph["layer_constraints"] = layer_constraint
 
     distance_constraints = []
@@ -51,7 +53,9 @@ try:
                     {
                         "type": "distance",
                         "left": nodes[i],
+                        "left_weight": 0.5,
                         "right": nodes[j],
+                        "right_weight": 0.5,
                         "gap": 0.5,
                     }
                 )
