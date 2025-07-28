@@ -2,6 +2,8 @@
 このモジュールは、グラフ描画に円制約を適用します。
 """
 
+from .distance_constraints import euclidean_to_hyperbolic, hyperbolic_to_euclidean
+
 
 def project_circle_constraints(drawing, circle_constraints, indices, centric=True):
     """
@@ -23,8 +25,8 @@ def project_circle_constraints(drawing, circle_constraints, indices, centric=Tru
     if centric:
         centerX = (max(x) + min(x)) / 2
         centerY = (max(y) + min(y)) / 2
-        x = [centerX - xx for xx in x]
-        y = [centerY - yy for yy in y]
+        x = [xx - centerX for xx in x]
+        y = [yy - centerY for yy in y]
     current_centers = []
     current_radii = []
     for circle_nodes, r, center in circle_constraints:
@@ -51,3 +53,22 @@ def project_circle_constraints(drawing, circle_constraints, indices, centric=Tru
         drawing.set_x(j, x[j])
         drawing.set_y(j, y[j])
     return current_centers, current_radii
+
+
+def project_circle_constraints_hyper(
+    drawing, circle_constraints, indices, centric=True
+):
+    import numpy as np
+
+    pos = np.array([[drawing.x(i), drawing.y(i)] for i in range(drawing.len())])
+    pos = hyperbolic_to_euclidean(pos)
+    for i in range(drawing.len()):
+        drawing.set_x(i, pos[i][0])
+        drawing.set_y(i, pos[i][1])
+    project_circle_constraints(drawing, circle_constraints, indices, centric)
+
+    pos = np.array([[drawing.x(i), drawing.y(i)] for i in range(drawing.len())])
+    pos = euclidean_to_hyperbolic(pos)
+    for i in range(drawing.len()):
+        drawing.set_x(i, pos[i][0])
+        drawing.set_y(i, pos[i][1])
