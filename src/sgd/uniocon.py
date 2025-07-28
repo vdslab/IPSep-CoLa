@@ -29,29 +29,27 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     sgd = eg.FullSgd.new_with_distance_matrix(dist)
     rng = eg.Rng.seed_from(parameter.seed)
 
-    size = []
     if overlap_removal:
-        for i, u in enumerate(nx_graph.nodes):
-            shape = nx_graph.nodes[u]["shape"]
-            size.append([shape["width"] + 5, shape["height"] + 5])
+        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.3)
+        overlap.iterations = 1
 
     # 制約の種類ごとに分割
     x_constraints: list = [
         eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
-        for c in nx_graph.graph["layer_constraints"]
+        for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "x"
     ]
     y_constraints: list = [
         eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
-        for c in nx_graph.graph["layer_constraints"]
+        for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "y"
     ]
 
-    distance_constraints = [
-        (indices[c["left"]], indices[c["right"]], c["gap"])
-        for c in nx_graph.graph["distance_constraints"]
-        if c.get("type", "") == "distance"
-    ]
+    # distance_constraints = [
+    #     (indices[c["left"]], indices[c["right"]], c["gap"])
+    #     for c in nx_graph.graph["distance_constraints"]
+    #     if c.get("type", "") == "distance"
+    # ]
 
     def step(eta):
         try:
@@ -68,8 +66,8 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     for i in range(parameter.iter):
         print(f"iter:{i}")
         sgd_scheduler.step(step)
-        for constraint in distance_constraints:
-            project_distance_constraints(drawing, [constraint], indices)
+        if overlap_removal:
+            overlap.apply_with_drawing_euclidean_2d(drawing)
         for constraint in x_constraints:
             eg.project_1d(drawing, 0, [constraint])
         for constraint in y_constraints:
