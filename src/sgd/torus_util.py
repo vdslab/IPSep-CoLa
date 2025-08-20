@@ -115,9 +115,7 @@ def draw_torus(graph, pos, cell_size=1):
                 node_color="lightgreen",
                 node_size=20,
             )
-            # Optionally, label nodes in the central tile
-            # if i == 0 and j == 0:
-            #     nx.draw_networkx_labels(graph, pos=tile_pos, ax=ax)
+            # nx.draw_networkx_labels(graph, pos=tile_pos, ax=ax)
 
     # 3. Draw edges manually for each tile
     for u, v in graph.edges():

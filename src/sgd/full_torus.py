@@ -1,3 +1,4 @@
+import sys
 import traceback
 
 import egraph as eg
@@ -6,14 +7,20 @@ import networkx as nx
 from util.graph import nxgraph_to_eggraph
 from util.parameter import SGDParameter
 
+from .projection.circle_constraints import (
+    project_circle_constraints,
+    project_circle_constraints_hyper,
+)
 from .torus_util import torus_position_to_euclid
+
+# TODO：道路
 
 
 def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, seed=0):
     parameter = SGDParameter(iterator=iterations, eps=eps, seed=seed)
     dist_list = nx_graph.graph["distance"]
     diameter = nx.diameter(nx_graph)
-    cell_size = 1
+    cell_size = 2
     div = diameter * cell_size
 
     eggraph, indices = nxgraph_to_eggraph(nx_graph)
@@ -41,13 +48,25 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "y"
     ]
-    print(
+    circle_constraints = [
         [
-            c["gap"] / div
-            for c in nx_graph.graph["constraints"]
-            if c.get("axis", "") == "y"
+            [indices[v] for v in c["nodes"]],
+            c["r"] / diameter,
+            indices[c["center"]] if c.get("center") is not None else None,
         ]
-    )
+        for c in nx_graph.graph["constraints"]
+        if c.get("type", "") == "circle"
+    ]
+    alignment_x_constraint = [
+        list(sorted([indices[v] for v in c["nodes"]], key=lambda x: x))
+        for c in nx_graph.graph["constraints"]
+        if c.get("type", "") == "alignment" and c.get("axis", "") == "x"
+    ]
+    alignment_y_constraint = [
+        list(sorted([indices[v] for v in c["nodes"]], key=lambda x: x))
+        for c in nx_graph.graph["constraints"]
+        if c.get("type", "") == "alignment" and c.get("axis", "") == "y"
+    ]
 
     def step(eta):
         try:
@@ -60,29 +79,37 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         parameter.iter,  # number of iterations
         parameter.eps,  # eps: eta_min = eps * min d[i, j] ^ 2
     )
-    for i in range(parameter.iter):
-        print(f"iter:{i}")
-        sgd_scheduler.step(step)
 
+    for i in range(parameter.iter):
+        sys.stdout.flush()
+        sys.stdout.write(f"\r\033[2Kiter:{i} / {parameter.iter}")
+        sgd_scheduler.step(step)
         xs, ys = torus_position_to_euclid(drawing, nx_graph, indices)
         drawingEuc = eg.DrawingEuclidean2d.initial_placement(eggraph)
+        for j in range(drawing.len()):
+            drawingEuc.set_x(j, xs[j])
+            drawingEuc.set_y(j, ys[j])
 
-        for i in range(drawing.len()):
-            drawingEuc.set_x(i, xs[i])
-            drawingEuc.set_y(i, ys[i])
-        if overlap_removal:
-            overlap.apply_with_drawing_euclidean_2d(drawingEuc)
-        eg.project_1d(drawingEuc, 0, x_constraints)
-        eg.project_1d(drawingEuc, 1, y_constraints)
-        for i in range(drawing.len()):
-            drawing.set_x(i, drawingEuc.x(i))
-            drawing.set_y(i, drawingEuc.y(i))
+        for nodes in alignment_x_constraint:
+            for v in nodes[1:]:
+                drawingEuc.set_y(v, ys[nodes[0]])
+        for nodes in alignment_y_constraint:
+            for v in nodes[1:]:
+                drawingEuc.set_x(v, xs[nodes[0]])
+
+        # project_circle_constraints(drawingEuc, circle_constraints, indices)
+        # eg.project_1d(drawingEuc, 0, x_constraints)
+        # eg.project_1d(drawingEuc, 1, y_constraints)
+
+        for j in range(drawing.len()):
+            drawing.set_x(j, drawingEuc.x(j))
+            drawing.set_y(j, drawingEuc.y(j))
 
     # import math
     pos = {
         u: [
-            drawingEuc.x(indices[u]),
-            drawingEuc.y(indices[u]),
+            drawing.x(indices[u]),
+            drawing.y(indices[u]),
         ]
         for u in nx_graph.nodes
     }
