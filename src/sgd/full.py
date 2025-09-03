@@ -24,15 +24,15 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     sgd = eg.FullSgd.new_with_distance_matrix(dist)
     rng = eg.Rng.seed_from(parameter.seed)
 
-    # size = []
+    size = []
     if overlap_removal:
-        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.3)
-        overlap.iterations = 5
-        # for i, u in enumerate(nx_graph.nodes):
-        #     shape = nx_graph.nodes[u]["shape"]
-        #     size.append([shape["width"] + 5, shape["height"] + 5])
-        #     shape = nx_graph.nodes[u]["shape"]
-        #     size.append([shape["width"] + 5, shape["height"] + 5])
+        # overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.3)
+        # overlap.iterations = 5
+        for i, u in enumerate(nx_graph.nodes):
+            shape = nx_graph.nodes[u]["shape"]
+            size.append([shape["width"] + 5, shape["height"] + 5])
+            shape = nx_graph.nodes[u]["shape"]
+            size.append([shape["width"] + 5, shape["height"] + 5])
     x_constraints = [
         eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
         for c in nx_graph.graph["constraints"]
@@ -43,25 +43,25 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "y"
     ]
-    circle_constraints = [
-        [
-            [indices[v] for v in c["nodes"]],
-            c["r"],
-            indices[c["center"]] if c.get("center") is not None else None,
-        ]
-        for c in nx_graph.graph["constraints"]
-        if c.get("type", "") == "circle"
-    ]
-    alignment_x_constraint = [
-        list(sorted([indices[v] for v in c["nodes"]], key=lambda x: x))
-        for c in nx_graph.graph["constraints"]
-        if c.get("type", "") == "alignment" and c.get("axis", "") == "x"
-    ]
-    alignment_y_constraint = [
-        list(sorted([indices[v] for v in c["nodes"]], key=lambda x: x))
-        for c in nx_graph.graph["constraints"]
-        if c.get("type", "") == "alignment" and c.get("axis", "") == "y"
-    ]
+    # circle_constraints = [
+    #     [
+    #         [indices[v] for v in c["nodes"]],
+    #         c["r"],
+    #         indices[c["center"]] if c.get("center") is not None else None,
+    #     ]
+    #     for c in nx_graph.graph["constraints"]
+    #     if c.get("type", "") == "circle"
+    # ]
+    # alignment_x_constraint = [
+    #     list(sorted([indices[v] for v in c["nodes"]], key=lambda x: x))
+    #     for c in nx_graph.graph["constraints"]
+    #     if c.get("type", "") == "alignment" and c.get("axis", "") == "x"
+    # ]
+    # alignment_y_constraint = [
+    #     list(sorted([indices[v] for v in c["nodes"]], key=lambda x: x))
+    #     for c in nx_graph.graph["constraints"]
+    #     if c.get("type", "") == "alignment" and c.get("axis", "") == "y"
+    # ]
 
     def step(eta):
         try:
@@ -78,11 +78,11 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     for i in range(parameter.iter):
         print(f"iter:{i}")
         sgd_scheduler.step(step)
-        # if overlap_removal:
-        #     overlap.apply_with_drawing_euclidean_2d(drawing)
-        # eg.project_rectangle_no_overlap_constraints_2d(
-        #     drawing, lambda u, d: size[u][d]
-        # )
+        if overlap_removal:
+            #     overlap.apply_with_drawing_euclidean_2d(drawing)
+            eg.project_rectangle_no_overlap_constraints_2d(
+                drawing, lambda u, d: size[u][d]
+            )
         # if clusters is not None:
         #     eg.project_clustered_rectangle_no_overlap_constraints(
         #         eggraph,
@@ -90,21 +90,21 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         #         lambda u: clusters[u],
         #         lambda u, d: size[u][d],
         #     )
-        xs, ys = [], []
-        for j in range(drawing.len()):
-            xs.append(drawing.x(j))
-            ys.append(drawing.y(j))
-        project_circle_constraints(drawing, circle_constraints, indices)
+        # xs, ys = [], []
+        # for j in range(drawing.len()):
+        #     xs.append(drawing.x(j))
+        #     ys.append(drawing.y(j))
+        # project_circle_constraints(drawing, circle_constraints, indices)
         # eg.project_1d(drawing, 0, x_constraints)
         # eg.project_1d(drawing, 1, y_constraints)
-        for nodes in alignment_x_constraint:
-            for v in nodes[1:]:
-                drawing.set_y(v, ys[nodes[0]])
-        for nodes in alignment_y_constraint:
-            for v in nodes[1:]:
-                drawing.set_x(v, xs[nodes[0]])
-        for j in range(drawing.len()):
-            xs.append(drawing.y(j))
+        # for nodes in alignment_x_constraint:
+        #     for v in nodes[1:]:
+        #         drawing.set_y(v, ys[nodes[0]])
+        # for nodes in alignment_y_constraint:
+        #     for v in nodes[1:]:
+        #         drawing.set_x(v, xs[nodes[0]])
+        # for j in range(drawing.len()):
+        #     xs.append(drawing.y(j))
 
     pos = {
         u: [
