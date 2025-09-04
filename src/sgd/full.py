@@ -31,8 +31,6 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for i, u in enumerate(nx_graph.nodes):
             shape = nx_graph.nodes[u]["shape"]
             size.append([shape["width"] + 5, shape["height"] + 5])
-            shape = nx_graph.nodes[u]["shape"]
-            size.append([shape["width"] + 5, shape["height"] + 5])
     x_constraints = [
         eg.Constraint(indices[str(c["left"])], indices[str(c["right"])], c["gap"])
         for c in nx_graph.graph["constraints"]
@@ -111,8 +109,8 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         #     xs.append(drawing.x(j))
         #     ys.append(drawing.y(j))
         # project_circle_constraints(drawing, circle_constraints, indices)
-        eg.project_1d(drawing, 0, x_constraints)
-        eg.project_1d(drawing, 1, y_constraints)
+        # eg.project_1d(drawing, 0, x_constraints)
+        # eg.project_1d(drawing, 1, y_constraints)
         # for nodes in alignment_x_constraint:
         #     for v in nodes[1:]:
         #         drawing.set_y(v, ys[nodes[0]])
