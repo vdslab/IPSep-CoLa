@@ -5,7 +5,6 @@ import os
 import networkx as nx
 
 from sgd.full_torus import sgd
-from sgd.torus_util import draw_torus
 
 
 def main():
@@ -32,7 +31,6 @@ def main():
             overlap_removal=args.overlap_removal,
             clusters=clusters,
         )
-        draw_torus(graph, pos)
         json.dump(pos, open(os.path.join(args.dest, basename), "w"), ensure_ascii=False)
 
 
