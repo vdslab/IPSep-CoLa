@@ -72,7 +72,7 @@ def nearest_xy_torus2d(center, other):
     return near
 
 
-def draw_torus(graph, pos, cell_size=1):
+def draw_torus(graph, pos, cell_size=1, output="./test.png"):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -179,4 +179,4 @@ def draw_torus(graph, pos, cell_size=1):
     ax.axhline(cell_size, color="k", linestyle=":")
     print("save_fig")
     plt.gca().invert_yaxis()
-    plt.savefig("./src/data/test.png")
+    plt.savefig(output)
