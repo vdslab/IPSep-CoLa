@@ -17,6 +17,7 @@ def boxplot_2item_plot_only(data1, data2, labels, legend=["Data1", "Data2"]):
         widths=0.6,
         patch_artist=True,
         boxprops=dict(facecolor="lightblue"),
+        sym="",
     )
     plt.boxplot(
         data2,
@@ -24,6 +25,7 @@ def boxplot_2item_plot_only(data1, data2, labels, legend=["Data1", "Data2"]):
         widths=0.6,
         patch_artist=True,
         boxprops=dict(facecolor="lightgreen"),
+        sym="",
     )
 
     blue_patch = mpatches.Patch(color="lightblue", label=legend[0])
