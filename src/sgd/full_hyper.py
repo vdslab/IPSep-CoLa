@@ -31,7 +31,7 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
             dist.set(
                 indices[u],
                 indices[v],
-                min(math.pi, math.log(distance[i][j]) if distance[i][j] != 0 else 0),
+                distance[i][j] / 8,
             )
 
     drawing = eg.DrawingHyperbolic2d.initial_placement(eggraph)
@@ -46,7 +46,7 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     circle_constraints = [
         [
             [indices[v] for v in c["nodes"]],
-            c["r"],
+            c["r"] / 8,
             indices[c["center"]] if c.get("center") is not None else None,
         ]
         for c in nx_graph.graph["constraints"]
@@ -75,9 +75,9 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         print(f"iter:{i}")
         sgd_scheduler.step(step)
 
-    # current_centers, current_radii = project_circle_constraints_hyper(
-    #     drawing, circle_constraints, indices
-    # )
+        current_centers, current_radii = project_circle_constraints_hyper(
+            drawing, circle_constraints, indices
+        )
 
     # circle_centers.append(current_centers)
     # circle_radii.append(current_radii)
