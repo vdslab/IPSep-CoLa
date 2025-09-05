@@ -21,8 +21,8 @@ def calc_stress(graph, drawing):
     nodes = list(graph.nodes)
     for i, j in itertools.combinations(range(graph.number_of_nodes()), 2):
         d1 = graph.graph["distance"][i][j]
-        pos_i = hyperbolic_to_euclidean(np.array([drawing[nodes[i]]]))[0]
-        pos_j = hyperbolic_to_euclidean(np.array([drawing[nodes[j]]]))[0]
+        pos_i = drawing[nodes[i]]
+        pos_j = drawing[nodes[j]]
         d2 = math.hypot(pos_i[0] - pos_j[0], pos_i[1] - pos_j[1])
         s += ((d2 - d1) / d1) ** 2
     s /= len(nodes) * (len(nodes) - 1) // 2
@@ -31,7 +31,7 @@ def calc_stress(graph, drawing):
 
 def calc_violation(graph, drawing):
     ls = 0
-    for constraint in graph.graph["layer_constraints"]:
+    for constraint in graph.graph["constraints"]:
         u = constraint["left"]
         v = constraint["right"]
         gap = constraint["gap"]
@@ -39,16 +39,16 @@ def calc_violation(graph, drawing):
             ls += max(0, gap - (drawing[v][0] - drawing[u][0]))
         else:
             ls += max(0, gap - (drawing[v][1] - drawing[u][1]))
-    ls /= len(graph.graph["layer_constraints"])
-    ovs = 0
-    for constraint in graph.graph["distance_constraints"]:
-        v, u, gap = constraint["left"], constraint["right"], constraint["gap"]
-        dx = drawing[v][0] - drawing[u][0]
-        dy = drawing[v][1] - drawing[u][1]
-        dist = math.hypot(dx, dy)
-        ovs += max(0, gap - dist)
-    ovs /= len(graph.graph["distance_constraints"])
-    return ls + ovs
+    ls /= len(graph.graph["constraints"])
+    # ovs = 0
+    # for constraint in graph.graph["distance_constraints"]:
+    #     v, u, gap = constraint["left"], constraint["right"], constraint["gap"]
+    #     dx = drawing[v][0] - drawing[u][0]
+    #     dy = drawing[v][1] - drawing[u][1]
+    #     dist = math.hypot(dx, dy)
+    #     ovs += max(0, gap - dist)
+    # ovs /= len(graph.graph["distance_constraints"])
+    return ls  # + ovs
 
 
 def poincare_distance(p1, p2):
@@ -121,12 +121,12 @@ def calc_violation_hyperbolic(graph, drawing):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("graph_file")
-    parser.add_argument("out_json")
+    parser.add_argument("dest")
     parser.add_argument("--overlap-removal", action=argparse.BooleanOptionalAction)
     parser.add_argument("--iterations", type=int, default=30)
     args = parser.parse_args()
 
-    os.makedirs(os.path.dirname(args.out_json), exist_ok=True)
+    os.makedirs(args.dest, exist_ok=True)
     graph = nx.node_link_graph(json.load(open(args.graph_file)))
     constrained_sgd_stresses = []
     constrained_sgd_violations = []
@@ -139,27 +139,27 @@ def main():
             overlap_removal=args.overlap_removal,
         )
         scs = calc_stress(graph, poscs)
-        vcs = calc_violation_hyperbolic(graph, poscs)
+        vcs = calc_violation(graph, poscs)
         constrained_sgd_stresses.append(scs)
         constrained_sgd_violations.append(vcs)
 
-        # posu = uniocon_sgd(
-        #     graph,
-        #     seed=i,
-        #     overlap_removal=args.overlap_removal,
-        # )
-        # su = calc_stress(graph, posu)
-        # vu = calc_violation(graph, posu)
-        # uniocon_sgd_stresses.append(su)
-        # uniocon_sgd_violations.append(vu)
+        posu = uniocon_sgd(
+            graph,
+            seed=i,
+            overlap_removal=args.overlap_removal,
+        )
+        su = calc_stress(graph, posu)
+        vu = calc_violation(graph, posu)
+        uniocon_sgd_stresses.append(su)
+        uniocon_sgd_violations.append(vu)
         json.dump(
             {
                 "seed": i,
                 "iteration": args.iterations,
-                # "unicon": {"stress": su, "violation": vu, "drawing": posu},
+                "unicon": {"stress": su, "violation": vu, "drawing": posu},
                 "constrained_sgd": {"stress": scs, "violation": vcs, "drawing": poscs},
             },
-            open(f"dest/compare/hyperbolic-layer/compare_seed{i}.json", "w"),
+            open(f"{args.dest}/compare_seed{i}.json", "w"),
         )
         # print(f"{scs=} {vcs=} {su=} {vu=}")
 

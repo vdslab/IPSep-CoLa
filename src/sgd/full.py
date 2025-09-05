@@ -111,8 +111,8 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         #     xs.append(drawing.x(j))
         #     ys.append(drawing.y(j))
         # project_circle_constraints(drawing, circle_constraints, indices)
-        # eg.project_1d(drawing, 0, x_constraints)
-        # eg.project_1d(drawing, 1, y_constraints)
+        eg.project_1d(drawing, 0, x_constraints)
+        eg.project_1d(drawing, 1, y_constraints)
         # for nodes in alignment_x_constraint:
         #     for v in nodes[1:]:
         #         drawing.set_y(v, ys[nodes[0]])

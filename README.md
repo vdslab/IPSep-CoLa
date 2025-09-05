@@ -93,6 +93,42 @@ do
 done
 ```
 
+## vs UNICON
+
+- 1138busの制約を作成
+  - 中心から階層を計算、その後辺のノードペアに対して、層の差を距離とした
+
+```bash
+python src/data/generate_constraint_by_type.py
+```
+
+- stressとviolationの計測
+  - `<save directory>`内に中間ファイルとして`compare_seed{i}.json`を生成。
+
+- 形式
+
+```json
+{
+    "seed": i,
+    "iteration": args.iterations,
+    "unicon": {"stress": su, "violation": vu, "drawing": posu},
+    "constrained_sgd": {"stress": scs, "violation": vcs, "drawing": poscs},
+},
+```
+
+- 実行方法
+
+```bash
+python scripts/drawing_and_stress_violation.py <graph file> <save directory> [option]
+```
+
+- 箱ひげ図の生成
+
+```bash
+python scripts/compare_stress_violation.py <compared directory> [option]
+```
+
+
 # dataset
 
 - road_central

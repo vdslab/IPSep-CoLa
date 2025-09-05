@@ -49,6 +49,20 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "y"
     ]
+    x_constraints.extend(
+        [
+            eg.Constraint(indices[str(c["right"])], indices[str(c["left"])], -c["gap"])
+            for c in nx_graph.graph["constraints"]
+            if c.get("axis", "") == "x"
+        ]
+    )
+    y_constraints.extend(
+        [
+            eg.Constraint(indices[str(c["right"])], indices[str(c["left"])], -c["gap"])
+            for c in nx_graph.graph["constraints"]
+            if c.get("axis", "") == "y"
+        ]
+    )
 
     # distance_constraints = [
     #     (indices[c["left"]], indices[c["right"]], c["gap"])
@@ -76,10 +90,10 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
             # eg.project_rectangle_no_overlap_constraints_2d(
             #     drawing, lambda u, d: size[u][d]
             # )
-        # for constraint in x_constraints:
-        #     eg.project_1d(drawing, 0, [constraint])
-        # for constraint in y_constraints:
-        #     eg.project_1d(drawing, 1, [constraint])
+        for constraint in x_constraints:
+            eg.project_1d(drawing, 0, [constraint])
+        for constraint in y_constraints:
+            eg.project_1d(drawing, 1, [constraint])
 
     pos = {u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes}
     return pos
