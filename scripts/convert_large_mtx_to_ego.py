@@ -124,17 +124,14 @@ def main():
         for j, u in enumerate(list(combined_graph.nodes)):
             dist_matrix[i][j] = dist[v][u]
     combined_graph.graph["distance"] = dist_matrix
+    combined_graph.graph["constraints"] = []
     # --- ステップ4: 統合グラフをJSON形式で保存 ---
     print(f"統合したエゴグラフを '{args.JSON_OUTPUT_PATH}' に保存しています...")
 
     graph_data = nx.node_link_data(combined_graph)
 
-    basename = os.path.splitext(os.path.basename(args.JSON_OUTPUT_PATH))[0]
-    dirname = os.path.dirname(args.JSON_OUTPUT_PATH)
     with open(
-        os.path.join(
-            dirname, f"{basename}_hub{args.NUM_HUBS}_rad{args.EGO_GRAPH_RADIUS}.json"
-        ),
+        os.path.join(args.JSON_OUTPUT_PATH),
         "w",
         encoding="utf-8",
     ) as f:
