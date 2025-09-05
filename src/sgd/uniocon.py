@@ -29,9 +29,14 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     sgd = eg.FullSgd.new_with_distance_matrix(dist)
     rng = eg.Rng.seed_from(parameter.seed)
 
+    size = []
     if overlap_removal:
-        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.3)
+        shape = nx_graph.nodes[list(nx_graph.nodes)[0]]["shape"]
+        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: shape["width"] + 5)
         overlap.iterations = 1
+        # for i, u in enumerate(nx_graph.nodes):
+        #     shape = nx_graph.nodes[u]["shape"]
+        #     size.append([shape["width"] + 5, shape["height"] + 5])
 
     # 制約の種類ごとに分割
     x_constraints: list = [
@@ -68,10 +73,13 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         sgd_scheduler.step(step)
         if overlap_removal:
             overlap.apply_with_drawing_euclidean_2d(drawing)
-        for constraint in x_constraints:
-            eg.project_1d(drawing, 0, [constraint])
-        for constraint in y_constraints:
-            eg.project_1d(drawing, 1, [constraint])
+            # eg.project_rectangle_no_overlap_constraints_2d(
+            #     drawing, lambda u, d: size[u][d]
+            # )
+        # for constraint in x_constraints:
+        #     eg.project_1d(drawing, 0, [constraint])
+        # for constraint in y_constraints:
+        #     eg.project_1d(drawing, 1, [constraint])
 
     pos = {u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes}
     return pos

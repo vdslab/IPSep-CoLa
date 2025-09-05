@@ -20,14 +20,16 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for j, v in enumerate(nx_graph.nodes):
             dist.set(indices[u], indices[v], dist_list[j][i])
 
-    drawing = eg.ClassicalMds.new_with_distance_matrix(dist).run_2d()
+    # drawing = eg.ClassicalMds.new_with_distance_matrix(dist).run_2d()
+    drawing = eg.DrawingEuclidean2d.initial_placement(eggraph)
     sgd = eg.FullSgd.new_with_distance_matrix(dist)
     rng = eg.Rng.seed_from(parameter.seed)
 
     size = []
     if overlap_removal:
-        # overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.3)
-        # overlap.iterations = 5
+        # shape = nx_graph.nodes[list(nx_graph.nodes)[0]]["shape"]
+        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.3)
+        overlap.iterations = 5
         for i, u in enumerate(nx_graph.nodes):
             shape = nx_graph.nodes[u]["shape"]
             size.append([shape["width"] + 5, shape["height"] + 5])
@@ -93,10 +95,10 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         print(f"iter:{i}")
         sgd_scheduler.step(step)
         if overlap_removal:
-            #     overlap.apply_with_drawing_euclidean_2d(drawing)
-            eg.project_rectangle_no_overlap_constraints_2d(
-                drawing, lambda u, d: size[u][d]
-            )
+            overlap.apply_with_drawing_euclidean_2d(drawing)
+            # eg.project_rectangle_no_overlap_constraints_2d(
+            #     drawing, lambda u, d: size[u][d]
+            # )
         # if clusters is not None:
         #     eg.project_clustered_rectangle_no_overlap_constraints(
         #         eggraph,
