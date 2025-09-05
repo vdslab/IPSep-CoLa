@@ -18,14 +18,11 @@ def main():
     writer = csv.writer(open(args.out, "w"))
     writer.writerow(["name", "method", "type", "n", "value"])
     data = [row for row in csv.DictReader(open(args.csv_file))]
-    methods = [
-        "webcola",
-        "sgd",
-    ]
+    methods = ["unicon", "sgd"]
     for method in methods:
         for row in data:
             graph_filepath = os.path.join(os.path.dirname(args.csv_file), row["path"])
-            print(method, graph_filepath)
+            print(method, graph_filepath, row)
             graph = nx.node_link_graph(json.load(open(graph_filepath)))
             drawing_filepath = (
                 f"data/drawing/{method}/{row['type']}/{int(row['n']):04}/{row['name']}"
