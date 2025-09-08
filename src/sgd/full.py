@@ -38,27 +38,12 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "x"
     ]
-    # eq
-    x_constraints.extend(
-        [
-            eg.Constraint(indices[str(c["right"])], indices[str(c["left"])], -c["gap"])
-            for c in nx_graph.graph["constraints"]
-            if c.get("axis", "") == "x"
-        ]
-    )
     y_constraints = [
         eg.Constraint(indices[str(c["left"])], indices[str(c["right"])], c["gap"])
         for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "y"
     ]
-    # eq
-    y_constraints.extend(
-        [
-            eg.Constraint(indices[str(c["right"])], indices[str(c["left"])], -c["gap"])
-            for c in nx_graph.graph["constraints"]
-            if c.get("axis", "") == "y"
-        ]
-    )
+    
     # circle_constraints = [
     #     [
     #         [indices[v] for v in c["nodes"]],

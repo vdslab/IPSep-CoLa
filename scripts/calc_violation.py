@@ -66,8 +66,8 @@ def main():
                 f"data/drawing/{method}/{row['type']}/{row['n']}/{row['name']}"
             )
             drawing = json.load(open(drawing_filepath))
-            # s = constraint_violation(graph, drawing)
-            s = overlap_violation(graph, drawing)
+            s = constraint_violation(graph, drawing)
+            # s = overlap_violation(graph, drawing)
             writer.writerow([row["name"], method, row["type"], row["n"], s])
 
 
