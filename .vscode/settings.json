@@ -9,7 +9,12 @@
       "source.organizeImports": "explicit"
     }
   },
-  "ruff.lint.args": ["--ignore=F401"],
+  "ruff.lint.select": ["F"],
+  "ruff.configuration": {
+    "lint": {
+      "unfixable": ["F401"]
+    }
+  },
   "[json][jsonc]": {
     "editor.quickSuggestions": {
       "strings": true

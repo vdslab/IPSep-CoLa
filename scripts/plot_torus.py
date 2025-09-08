@@ -4,7 +4,7 @@ import os
 
 import networkx as nx
 
-from util.graph.plot import plot_graph
+from sgd.torus_util import draw_torus
 
 
 def main():
@@ -19,7 +19,8 @@ def main():
     graph = nx.node_link_graph(json.load(open(args.graph_file)))
     pos = json.load(open(args.drawing_file))
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
-    plot_graph(graph, pos, args.output, show_violation=args.show_violation)
+
+    draw_torus(graph, pos, output=args.output)
 
 
 if __name__ == "__main__":

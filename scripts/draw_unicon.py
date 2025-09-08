@@ -4,7 +4,7 @@ import os
 
 import networkx as nx
 
-from sgd.full import sgd
+from sgd.uniocon import sgd
 
 
 def main():

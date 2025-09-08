@@ -43,3 +43,23 @@ def nxgraph_to_eggraph(graph: nx.Graph) -> tuple[eg.Graph, dict]:
     for u, v in graph.edges:
         eggraph.add_edge(indices[u], indices[v], (u, v))
     return eggraph, indices
+
+
+def nxgraph_to_egDiGraph(graph: nx.Graph, cneters: list[str]) -> tuple[eg.Graph, dict]:
+    from collections import deque
+
+    eggraph = eg.DiGraph()
+    indices = {}
+    for u in graph.nodes:
+        indices[u] = eggraph.add_node(u)
+
+    que = deque(cneters)
+    visit = set(cneters)
+    while que:
+        v = que.popleft()
+        for u in graph.neighbors(v):
+            if u not in visit:
+                visit.add(u)
+                que.append(u)
+                eggraph.add_edge(indices[v], indices[u], (v, u))
+    return eggraph, indices

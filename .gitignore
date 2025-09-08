@@ -300,4 +300,7 @@ dist
 .pnp.*
 
 /result
-/data
+**/data/*
+js/public/
+dest/
+!src/data/**.py

@@ -4,7 +4,7 @@ import os
 
 import networkx as nx
 
-from sgd.full import sgd
+from sgd.full_hyper import sgd
 
 
 def main():
