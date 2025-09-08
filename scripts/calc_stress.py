@@ -12,20 +12,21 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("csv_file")
     parser.add_argument("out")
+    parser.add_argument("--methods", nargs="+", default=["webcola", "sgd"])
     args = parser.parse_args()
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     writer = csv.writer(open(args.out, "w"))
     writer.writerow(["name", "method", "type", "n", "value"])
     data = [row for row in csv.DictReader(open(args.csv_file))]
-    methods = ["unicon", "sgd"]
+    methods = args.methods
     for method in methods:
         for row in data:
             graph_filepath = os.path.join(os.path.dirname(args.csv_file), row["path"])
-            print(method, graph_filepath, row)
+            print(method, graph_filepath, f"{int(row['n']):0>4}")
             graph = nx.node_link_graph(json.load(open(graph_filepath)))
             drawing_filepath = (
-                f"data/drawing/{method}/{row['type']}/{int(row['n']):04}/{row['name']}"
+                f"data/drawing/{method}/{row['type']}/{int(row['n']):0>4}/{row['name']}"
             )
             drawing = json.load(open(drawing_filepath))
             s = 0

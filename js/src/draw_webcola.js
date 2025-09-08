@@ -6,12 +6,6 @@ import { parseArgs } from "node:util";
 function layout(graph, options) {
   const overlapRemvoal = options?.overlapRemvoal || false;
   const clusters = options?.clusters || null;
-  console.log(graph.graph.constraints.length);
-  graph.graph.constraints.forEach(({ axis, left, right, gap }) =>
-    graph.graph.constraints.push({ axis, left: right, right: left, gap: -gap })
-  );
-  console.log(graph.graph.constraints.length);
-
   const d3cola = cola
     .d3adaptor(d3)
     .nodes(graph.nodes)

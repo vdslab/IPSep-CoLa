@@ -13,25 +13,25 @@ def main():
     parser.add_argument("csv_file")
     parser.add_argument("out")
     parser.add_argument("--title", default="")
+    parser.add_argument("--methods", nargs=2, required=True)
     args = parser.parse_args()
 
     data = [row for row in csv.DictReader(open(args.csv_file))]
     data.sort(key=lambda row: (row["method"], int(row["n"])))
     labels = sorted({int(row["n"]) for row in data})
-    values = {
-        method: [
-            [float(row["value"]) for row in list(rows)]
-            for _, rows in itertools.groupby(method_rows, lambda row: int(row["n"]))
-        ]
-        for method, method_rows in itertools.groupby(data, lambda row: row["method"])
-    }
-
+    values = {method: [] for method in args.methods}
+    for method, method_rows in itertools.groupby(data, lambda row: row["method"]):
+        if method not in args.methods:
+            continue
+        for _, rows in itertools.groupby(method_rows, lambda row: int(row["n"])):
+            values[method].append([float(row["value"]) for row in list(rows)])
+    print(args.methods, labels, values)
     matplotlib.use("agg")
     boxplot_2item_plot_only(
-        values["webcola"],
-        values["sgd"],
+        values[args.methods[0]],
+        values[args.methods[1]],
         labels,
-        ["Webcola", "FullSGD"],
+        args.methods,
     )
     plt.title(args.title)
     plt.savefig(args.out)
