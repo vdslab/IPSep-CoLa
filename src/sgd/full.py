@@ -10,6 +10,15 @@ from .projection.circle_constraints import (
 )
 
 
+def print_progress_bar(iteration, total, bar_length=40):
+    progress = (iteration + 1) / total
+    block = int(round(bar_length * progress))
+    text = "\rProgress: [{0}] {1}%".format(
+        "#" * block + "-" * (bar_length - block), int(progress * 100)
+    )
+    print(text, end="")
+
+
 def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, seed=0):
     parameter = SGDParameter(iterator=iterations, eps=eps, seed=seed)
     dist_list = nx_graph.graph["distance"]
@@ -43,16 +52,16 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "y"
     ]
-    
-    # circle_constraints = [
-    #     [
-    #         [indices[v] for v in c["nodes"]],
-    #         c["r"],
-    #         indices[c["center"]] if c.get("center") is not None else None,
-    #     ]
-    #     for c in nx_graph.graph["constraints"]
-    #     if c.get("type", "") == "circle"
-    # ]
+
+    circle_constraints = [
+        [
+            [indices[v] for v in c["nodes"]],
+            c["r"],
+            indices[c["center"]] if c.get("center") is not None else None,
+        ]
+        for c in nx_graph.graph["constraints"]
+        if c.get("type", "") == "circle"
+    ]
     # alignment_x_constraint = [
     #     list(sorted([indices[v] for v in c["nodes"]], key=lambda x: x))
     #     for c in nx_graph.graph["constraints"]
@@ -77,13 +86,13 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     )
 
     for i in range(parameter.iter):
-        print(f"iter:{i}")
+        print_progress_bar(i, parameter.iter)
         sgd_scheduler.step(step)
         if overlap_removal:
-            overlap.apply_with_drawing_euclidean_2d(drawing)
-            # eg.project_rectangle_no_overlap_constraints_2d(
-            #     drawing, lambda u, d: size[u][d]
-            # )
+            # overlap.apply_with_drawing_euclidean_2d(drawing)
+            eg.project_rectangle_no_overlap_constraints_2d(
+                drawing, lambda u, d: size[u][d]
+            )
         # if clusters is not None:
         #     eg.project_clustered_rectangle_no_overlap_constraints(
         #         eggraph,

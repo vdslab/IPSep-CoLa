@@ -13,6 +13,15 @@ from .projection.circle_constraints import project_circle_constraints
 from .projection.distance_constraints import project_distance_constraints
 
 
+def print_progress_bar(iteration, total, bar_length=40):
+    progress = (iteration + 1) / total
+    block = int(round(bar_length * progress))
+    text = "\rProgress: [{0}] {1}%".format(
+        "#" * block + "-" * (bar_length - block), int(progress * 100)
+    )
+    print(text, end="")
+
+
 def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, seed=0):
     parameter = SGDParameter(iterator=iterations, eps=eps, seed=seed)
     dist_list = nx_graph.graph["distance"]
@@ -40,29 +49,15 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
 
     # 制約の種類ごとに分割
     x_constraints: list = [
-        eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
+        eg.Constraint(indices[str(c["left"])], indices[str(c["right"])], c["gap"])
         for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "x"
     ]
     y_constraints: list = [
-        eg.Constraint(indices[c["left"]], indices[c["right"]], c["gap"])
+        eg.Constraint(indices[str(c["left"])], indices[str(c["right"])], c["gap"])
         for c in nx_graph.graph["constraints"]
         if c.get("axis", "") == "y"
     ]
-    x_constraints.extend(
-        [
-            eg.Constraint(indices[str(c["right"])], indices[str(c["left"])], -c["gap"])
-            for c in nx_graph.graph["constraints"]
-            if c.get("axis", "") == "x"
-        ]
-    )
-    y_constraints.extend(
-        [
-            eg.Constraint(indices[str(c["right"])], indices[str(c["left"])], -c["gap"])
-            for c in nx_graph.graph["constraints"]
-            if c.get("axis", "") == "y"
-        ]
-    )
 
     # distance_constraints = [
     #     (indices[c["left"]], indices[c["right"]], c["gap"])
@@ -83,7 +78,7 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     )
 
     for i in range(parameter.iter):
-        print(f"iter:{i}")
+        print_progress_bar(i, parameter.iter)
         sgd_scheduler.step(step)
         if overlap_removal:
             overlap.apply_with_drawing_euclidean_2d(drawing)
