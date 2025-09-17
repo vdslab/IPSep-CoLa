@@ -23,7 +23,7 @@ def main():
     for method in methods:
         for row in data:
             graph_filepath = os.path.join(os.path.dirname(args.csv_file), row["path"])
-            print(method, graph_filepath, f"{int(row['n']):0>4}")
+            print("\r", method, graph_filepath, f"{int(row['n']):0>4}")
             graph = nx.node_link_graph(json.load(open(graph_filepath)))
             drawing_filepath = (
                 f"data/drawing/{method}/{row['type']}/{int(row['n']):0>4}/{row['name']}"

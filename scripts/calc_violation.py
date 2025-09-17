@@ -27,7 +27,7 @@ def constraint_violation(graph, drawing):
 
 def overlap_violation(graph, drawing):
     nodes = list(graph.nodes)
-    r = graph.nodes[nodes[0]]["shape"]["width"] + 5
+    r = 50
     s = 0
     node_pairs = list(itertools.combinations(nodes, 2))
 
@@ -52,7 +52,10 @@ def main():
     parser.add_argument("out")
     parser.add_argument("--methods", nargs="+", default=["webcola", "sgd"])
     parser.add_argument(
-        "--violations", nargs="+", default=["constraint"], choices=["constraint", "overlap"]
+        "--violations",
+        nargs="+",
+        default=["constraint"],
+        choices=["constraint", "overlap"],
     )
     args = parser.parse_args()
 
@@ -65,7 +68,7 @@ def main():
         for row in data:
             graph_filepath = os.path.join(os.path.dirname(args.csv_file), row["path"])
             graph = nx.node_link_graph(json.load(open(graph_filepath)))
-            print(method, graph_filepath)
+            print("\r", method, graph_filepath)
             drawing_filepath = (
                 f"data/drawing/{method}/{row['type']}/{row['n']:0>4}/{row['name']}"
             )

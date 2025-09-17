@@ -112,8 +112,7 @@ def draw_torus(graph, pos, cell_size=1, output="./test.png"):
                 pos=tile_pos,
                 ax=ax,
                 node_shape="o",
-                node_color="lightgreen",
-                node_size=20,
+                node_size=800,
             )
             # nx.draw_networkx_labels(graph, pos=tile_pos, ax=ax)
 

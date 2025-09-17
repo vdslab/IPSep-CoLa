@@ -13,6 +13,8 @@ def main():
     parser.add_argument("csv_file")
     parser.add_argument("out")
     parser.add_argument("--title", default="")
+    parser.add_argument("--xlabel", default="")
+    parser.add_argument("--ylabel", default="")
     parser.add_argument("--methods", nargs=2, required=True)
     args = parser.parse_args()
 
@@ -33,6 +35,8 @@ def main():
         labels,
         args.methods,
     )
+    plt.xlabel(args.xlabel)
+    plt.ylabel(args.ylabel)
     plt.title(args.title)
     plt.savefig(args.out)
 
