@@ -1,22 +1,16 @@
 #!/bin/bash
-
-# -----------------------------------------------------------------------------
-# 引数チェック
-# -----------------------------------------------------------------------------
-if [ "$#" -ne 5 ]; then
-	echo "Usage: $0 TYPE START END STEP VIOLATION_TYPE"
-	exit 1
-fi
+cd "$(dirname "$0")/.." || exit
 
 # -----------------------------------------------------------------------------
 # 設定セクション
 # -----------------------------------------------------------------------------
 # 引数から実験の種類や対象のノード数を設定します。
-TYPE="$1"
-START="$2"
-END="$3"
-STEP="$4"
-VIOLATION_TYPE="$5"
+TYPE="project_after_gap"
+# TYPE="project_after_fix"
+START="100"
+END="2000"
+STEP="100"
+VIOLATION_TYPE="constraint"
 
 # 各種ディレクトリのパスを設定します。
 GRAPH_DIR="data/graph"
@@ -26,9 +20,8 @@ VIOLATION_DIR="result/violation"
 PLOT_DIR="result/plot"
 
 # 評価する手法名を定義します。
-SGD="FullSGD(ours)"
-WEBCOLA="WebCoLa"
-UNICON="UNICON"
+DURING="Project during layout"
+AFTER="Project after layout"
 
 # -----------------------------------------------------------------------------
 # 関数定義
@@ -61,23 +54,17 @@ process_method() {
 	log_info "処理中: $method_name"
 
 	for n in $(seq -f "%04g" $START $STEP $END); do
+		echo "$n"
 		# 手法ごとに描画コマンドを実行
 		case "$method_name" in
-		"$SGD")
-			python scripts/draw_sgd.py \
+		"$DURING")
+			python scripts/draw.py \
 				"$GRAPH_DIR/$TYPE/$n"/*.json \
 				--dest "$DRAWING_DIR/$method_name/$TYPE/$n"
 			;;
-		"$WEBCOLA")
-			mkdir -p "$DRAWING_DIR/$method_name/$TYPE/$n"
-			for i in $(seq -w 0 19); do
-				node js/src/draw_webcola.js \
-					--graphFile "$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
-					--output "$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_$i.json"
-			done
-			;;
-		"$UNICON")
-			python scripts/draw_unicon.py \
+		"$AFTER")
+			python scripts/draw.py \
+				--space "after_project" \
 				--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
 				"$GRAPH_DIR/$TYPE/$n"/*.json
 			;;
@@ -104,42 +91,46 @@ analyze_results() {
 	local result_prefix="$TYPE-$START-$END"
 
 	# Stress（ストレス）の計算と可視化
-	python scripts/calc_stress.py \
-		"$GRAPH_DIR/$TYPE.csv" \
-		"$STRESS_DIR/$result_prefix.csv" \
-		--methods "${methods[@]}"
+	# python scripts/calc_stress.py \
+	# 	"$GRAPH_DIR/$TYPE.csv" \
+	# 	"$STRESS_DIR/$result_prefix.csv" \
+	# 	--methods "$AFTER" "$DURING"
 
 	python scripts/create_boxplot.py \
 		"$STRESS_DIR/$result_prefix.csv" \
 		"$STRESS_DIR/$result_prefix.png" \
-		--methods "$UNICON" "$SGD" \
-		--title "$UNICON stress vs $SGD stress"
+		--methods "$AFTER" "$DURING" \
+		--title "$AFTER stress vs $DURING stress" \
+		--ylabel "normalized stress" \
+		--xlabel "node size"
 
 	# Violation（制約違反）の計算と可視化
-	python scripts/calc_violation.py \
-		"$GRAPH_DIR/$TYPE.csv" \
-		"$VIOLATION_DIR/$result_prefix.csv" \
-		--methods "${methods[@]}" \
-		--violations "$VIOLATION_TYPE" # ここを変更
+	# python scripts/calc_violation.py \
+	# 	"$GRAPH_DIR/$TYPE.csv" \
+	# 	"$VIOLATION_DIR/$result_prefix.csv" \
+	# 	--methods "$AFTER" "$DURING" \
+	# 	--violations "$VIOLATION_TYPE" # ここを変更
 
 	python scripts/create_boxplot.py \
 		"$VIOLATION_DIR/$result_prefix.csv" \
 		"$VIOLATION_DIR/$result_prefix.png" \
-		--methods "$UNICON" "$SGD" \
-		--title "$UNICON violation vs $SGD violation"
+		--methods "$AFTER" "$DURING" \
+		--title "$AFTER violation vs $DURING violation" \
+		--ylabel "average violation" \
+		--xlabel "node size"
 }
 
 # -----------------------------------------------------------------------------
 # メイン処理
 # -----------------------------------------------------------------------------
 main() {
-	local all_methods=("$SGD" "$WEBCOLA" "$UNICON")
+	local all_methods=("$DURING, $AFTER")
 
-	generate_graph_list
+	# generate_graph_list
 
-	for method in "${all_methods[@]}"; do
-		process_method "$method"
-	done
+	# for method in "${all_methods[@]}"; do
+	# 	process_method "$method"
+	# done
 
 	analyze_results "${all_methods[@]}"
 
