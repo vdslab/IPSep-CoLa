@@ -41,8 +41,10 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     size = []
     if overlap_removal:
         shape = nx_graph.nodes[list(nx_graph.nodes)[0]]["shape"]
-        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: shape["width"] + 5)
+        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 50)
         overlap.iterations = 1
+        overlap.strength = 2
+
         # for i, u in enumerate(nx_graph.nodes):
         #     shape = nx_graph.nodes[u]["shape"]
         #     size.append([shape["width"] + 5, shape["height"] + 5])

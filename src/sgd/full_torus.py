@@ -20,23 +20,21 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     parameter = SGDParameter(iterator=iterations, eps=eps, seed=seed)
     dist_list = nx_graph.graph["distance"]
     diameter = nx.diameter(nx_graph)
-    cell_size = 10
-    div = diameter * cell_size
+    print(diameter)
 
     eggraph, indices = nxgraph_to_eggraph(nx_graph)
     dist = eg.DistanceMatrix(eggraph)
     for i, u in enumerate(nx_graph.nodes):
         for j, v in enumerate(nx_graph.nodes):
-            dist.set(indices[u], indices[v], dist_list[j][i] / diameter)
+            dist.set(indices[u], indices[v], float(dist_list[j][i]) * 0.04)
 
     drawing = eg.DrawingTorus2d.initial_placement(eggraph)
-    drawingEuc = eg.DrawingEuclidean2d.initial_placement(eggraph)
     sgd = eg.FullSgd.new_with_distance_matrix(dist)
     rng = eg.Rng.seed_from(parameter.seed)
 
     # size = []
     if overlap_removal:
-        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.3 / diameter)
+        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.04)
         overlap.iterations = 5
 
     # x_constraints = [

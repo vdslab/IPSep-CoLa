@@ -5,10 +5,6 @@ import egraph as eg
 from util.graph import nxgraph_to_eggraph
 from util.parameter import SGDParameter
 
-from .projection.circle_constraints import (
-    project_circle_constraints,
-)
-
 
 def print_progress_bar(iteration, total, bar_length=40):
     progress = (iteration + 1) / total
@@ -55,26 +51,6 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         if c.get("axis", "") == "y"
     ]
 
-    circle_constraints = [
-        [
-            [indices[v] for v in c["nodes"]],
-            c["r"],
-            indices[c["center"]] if c.get("center") is not None else None,
-        ]
-        for c in nx_graph.graph["constraints"]
-        if c.get("type", "") == "circle"
-    ]
-    # alignment_x_constraint = [
-    #     list(sorted([indices[v] for v in c["nodes"]], key=lambda x: x))
-    #     for c in nx_graph.graph["constraints"]
-    #     if c.get("type", "") == "alignment" and c.get("axis", "") == "x"
-    # ]
-    # alignment_y_constraint = [
-    #     list(sorted([indices[v] for v in c["nodes"]], key=lambda x: x))
-    #     for c in nx_graph.graph["constraints"]
-    #     if c.get("type", "") == "alignment" and c.get("axis", "") == "y"
-    # ]
-
     def step(eta):
         try:
             sgd.shuffle(rng)
@@ -95,29 +71,10 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
             eg.project_rectangle_no_overlap_constraints_2d(
                 drawing, lambda u, d: size[u][d]
             )
-        # if clusters is not None:
-        #     eg.project_clustered_rectangle_no_overlap_constraints(
-        #         eggraph,
-        #         drawing,
-        #         lambda u: clusters[u],
-        #         lambda u, d: size[u][d],
-        #     )
-        # xs, ys = [], []
-        # for j in range(drawing.len()):
-        #     xs.append(drawing.x(j))
-        #     ys.append(drawing.y(j))
-        # project_circle_constraints(drawing, circle_constraints, indices)
-        eg.project_1d(drawing, 0, x_constraints)
-        eg.project_1d(drawing, 1, y_constraints)
-        # for nodes in alignment_x_constraint:
-        #     for v in nodes[1:]:
-        #         drawing.set_y(v, ys[nodes[0]])
-        # for nodes in alignment_y_constraint:
-        #     for v in nodes[1:]:
-        #         drawing.set_x(v, xs[nodes[0]])
-        # for j in range(drawing.len()):
-        #     xs.append(drawing.y(j))
     print("\rdone\033[2K\033[G\r", end="")
+    eg.project_1d(drawing, 0, x_constraints)
+    eg.project_1d(drawing, 1, y_constraints)
+
     pos = {
         u: [
             drawing.x(indices[u]),

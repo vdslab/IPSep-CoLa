@@ -19,19 +19,19 @@ from .projection.circle_constraints import (
 def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, seed=2):
     parameter = SGDParameter(iterator=iterations, eps=eps, seed=seed)
     dist_list = nx_graph.graph["distance"]
-    diameter = nx.diameter(nx_graph)
-    print(diameter)
+    # diameter = nx.diameter(nx_graph)
+    # print(diameter)
 
     eggraph, indices = nxgraph_to_eggraph(nx_graph)
-    distance = nx.floyd_warshall_numpy(nx_graph, weight=None)
-    print(distance)
+    # distance = nx.floyd_warshall_numpy(nx_graph, weight=None)
+    # print(distance)
     dist = eg.DistanceMatrix(eggraph)
     for i, u in enumerate(nx_graph.nodes):
         for j, v in enumerate(nx_graph.nodes):
             dist.set(
                 indices[u],
                 indices[v],
-                distance[i][j] / 8,
+                dist_list[i][j] * 0.125,
             )
 
     drawing = eg.DrawingHyperbolic2d.initial_placement(eggraph)
@@ -75,9 +75,9 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         print(f"iter:{i}")
         sgd_scheduler.step(step)
 
-        current_centers, current_radii = project_circle_constraints_hyper(
-            drawing, circle_constraints, indices
-        )
+        # current_centers, current_radii = project_circle_constraints_hyper(
+        #     drawing, circle_constraints, indices
+        # )
 
     # circle_centers.append(current_centers)
     # circle_radii.append(current_radii)
