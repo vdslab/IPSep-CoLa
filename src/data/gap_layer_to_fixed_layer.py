@@ -52,7 +52,7 @@ def main():
         os.makedirs(args.dest, exist_ok=True)
         filepath = os.path.join(args.dest, basename)
         with open(filepath, "w") as f:
-            json.dump(nx.node_link_data(graph), f, indent=2)
+            json.dump(nx.node_link_data(graph), f)
 
 
 if __name__ == "__main__":

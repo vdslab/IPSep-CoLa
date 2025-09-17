@@ -12,6 +12,7 @@ from util.graph import nxgraph_to_egDiGraph
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("filepath")
+    parser.add_argument("out")
     args = parser.parse_args()
 
     filepath = args.filepath
@@ -42,7 +43,7 @@ def main():
     graph.graph["constraints"] = circle_constraint
     json.dump(
         nx.node_link_data(graph),
-        open(filepath, "w", encoding="utf-8"),
+        open(args.out, "w", encoding="utf-8"),
         indent=4,
         ensure_ascii=False,
     )

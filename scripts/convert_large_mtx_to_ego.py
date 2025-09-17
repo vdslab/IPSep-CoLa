@@ -55,6 +55,16 @@ def main():
     print(
         f"読み込み完了。グラフの形状: {adj_matrix.shape}, 非ゼロ要素数: {adj_matrix.nnz}"
     )
+    print("読み込み完了。")
+    # ノード数は行列の次元数から取得
+    num_nodes = adj_matrix.shape[0]
+
+    # エッジ数は非ゼロ要素の数から取得
+    # adj_matrix.nnz は非ゼロ要素の総数を返す
+    num_edges = adj_matrix.nnz
+    print(f"ノード数: {num_nodes}")
+    # road-central.mtxは無向グラフなので、エッジ数は非ゼロ要素数を2で割ったもの
+    print(f"エッジ数: {int(num_edges / 2)}")
     print("-" * 30)
 
     # --- ステップ2: 次数上位ノードの特定 ---
