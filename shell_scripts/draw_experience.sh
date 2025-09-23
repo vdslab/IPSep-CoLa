@@ -13,7 +13,7 @@ echo "$TYPE, $METHOD, $NUMBER, $IDX, $ARGS"
 
 case "$METHOD" in
 "$SGD")
-	python scripts/draw_sgd.py \
+	python scripts/draw.py --space euclidean \
 		data/graph/"$TYPE"/"$NUMBER"/node_n="$NUMBER"_"$IDX".json \
 		--dest data/drawing/"$METHOD"/"$TYPE"/"$NUMBER"/
 	;;

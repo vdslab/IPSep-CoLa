@@ -35,7 +35,8 @@ def main():
     os.makedirs(args.dest, exist_ok=True)
     for filepath in args.input:
         basename = os.path.basename(filepath)
-        graph = nx.node_link_graph(json.load(open(filepath)), link="links")
+        with open(filepath) as fp:
+            graph = nx.node_link_graph(json.load(fp), link="links")
         clusters = None
         if args.cluster_overlap_removal:
             clusters = [graph.nodes[u]["group"] for u in graph.nodes]
@@ -49,7 +50,9 @@ def main():
         }
 
         pos = sgd(**sgd_args)
-        json.dump(pos, open(os.path.join(args.dest, basename), "w"), ensure_ascii=False)
+        output_path = os.path.join(args.dest, basename)
+        with open(output_path, "w") as fp:
+            json.dump(pos, fp, ensure_ascii=False)
 
 
 if __name__ == "__main__":

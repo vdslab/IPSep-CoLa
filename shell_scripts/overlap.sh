@@ -1,7 +1,7 @@
 #!/bin/bash
 cd "$(dirname "$0")/.." || exit
 
-for n in $(seq -w 100 100 2000); do python scripts/draw_sgd.py --overlap-removal --dest data/drawing/sgd/overlap/$n data/graph/overlap/$n/*.json; done
+for n in $(seq -w 100 100 2000); do python scripts/draw.py --space euclidean --overlap-removal --dest data/drawing/sgd/overlap/$n data/graph/overlap/$n/*.json; done
 for n in $(seq -w 100 100 2000); do
 	mkdir -p data/drawing/webcola/overlap/$n
 done

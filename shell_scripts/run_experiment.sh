@@ -65,7 +65,7 @@ process_method() {
 		# 手法ごとに描画コマンドを実行
 		case "$method_name" in
 		"$SGD")
-			python scripts/draw_sgd.py \
+			python scripts/draw.py --space euclidean \
 				"$GRAPH_DIR/$TYPE/$n"/*.json \
 				--dest "$DRAWING_DIR/$method_name/$TYPE/$n"
 			;;

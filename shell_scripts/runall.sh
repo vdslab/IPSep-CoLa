@@ -3,7 +3,7 @@ cd "$(dirname "$0")/.." || exit
 
 # for n in `seq -f '%04.0f' 100 100 2000`
 # do
-#   python scripts/draw_sgd.py --dest data/drawing/sgd/overlap/$n --overlap-removal data/graph/overlap/$n/*
+#   python scripts/draw.py --space euclidean --dest data/drawing/sgd/overlap/$n --overlap-removal data/graph/overlap/$n/*
 # done
 
 for n in $(seq -f '%04.0f' 100 100 2000); do
