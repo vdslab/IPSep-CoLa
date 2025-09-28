@@ -46,6 +46,26 @@ def overlap_violation(graph, drawing):
     return s / len(node_pairs)
 
 
+def overlap_violation_rect(graph, drawing):
+    nodes = list(graph.nodes)
+    r = 20 * 2
+    s = 0
+    node_pairs = list(itertools.combinations(nodes, 2))
+
+    for u, v in node_pairs:
+        pos_u = drawing[u]
+        pos_v = drawing[v]
+        # if r - abs(pos_v[0] - pos_u[0]) > 1e1:
+        #     print(abs(pos_v[0] - pos_u[0]), r - abs(pos_v[0] - pos_u[0]))
+        xviolation = max(0, r - abs(pos_v[0] - pos_u[0]))
+        yviolation = max(0, r - abs(pos_v[1] - pos_u[1]))
+        if xviolation > 1e-1 and yviolation > 1e-1:
+            s += xviolation + yviolation
+
+    # 違反量の合計をペアの総数で割り、平均値を返す
+    return s / len(node_pairs)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("csv_file")
@@ -77,7 +97,7 @@ def main():
             if "constraint" in args.violations:
                 s += constraint_violation(graph, drawing)
             if "overlap" in args.violations:
-                s += overlap_violation(graph, drawing)
+                s += overlap_violation_rect(graph, drawing)
             writer.writerow([row["name"], method, row["type"], row["n"], s])
 
 

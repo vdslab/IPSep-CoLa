@@ -36,10 +36,10 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 50)
         overlap.iterations = 20
         overlap.strength = 2
-        print("Overlap removal Rect size:", nx_graph.nodes["0"]["shape"])
+        # print("Overlap removal Rect size:", nx_graph.nodes["0"]["shape"])
         for i, u in enumerate(nx_graph.nodes):
             shape = nx_graph.nodes[u]["shape"]
-            size.append([shape["width"] + 5, shape["height"] + 5])
+            size.append([shape["width"] * 2, shape["height"] * 2])
     x_constraints = [
         eg.Constraint(indices[str(c["left"])], indices[str(c["right"])], c["gap"])
         for c in nx_graph.graph["constraints"]
@@ -66,14 +66,12 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     for i in range(parameter.iter):
         print_progress_bar(i, parameter.iter)
         sgd_scheduler.step(step)
-        if overlap_removal:
-            # overlap.apply_with_drawing_euclidean_2d(drawing)
-            eg.project_rectangle_no_overlap_constraints_2d(
-                drawing, lambda u, d: size[u][d]
-            )
-    print("\rdone\033[2K\033[G\r", end="")
+    if overlap_removal:
+        # overlap.apply_with_drawing_euclidean_2d(drawing)
+        eg.project_rectangle_no_overlap_constraints_2d(drawing, lambda u, d: size[u][d])
     eg.project_1d(drawing, 0, x_constraints)
     eg.project_1d(drawing, 1, y_constraints)
+    print("\rdone\033[2K\033[G\r", end="")
 
     pos = {
         u: [

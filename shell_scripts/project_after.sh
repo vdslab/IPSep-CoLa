@@ -5,12 +5,12 @@ cd "$(dirname "$0")/.." || exit
 # 設定セクション
 # -----------------------------------------------------------------------------
 # 引数から実験の種類や対象のノード数を設定します。
-TYPE="project_after_gap"
+TYPE="project_after_overlap_rect"
 # TYPE="project_after_fix"
 START="100"
 END="2000"
 STEP="100"
-VIOLATION_TYPE="constraint"
+VIOLATION_TYPE="overlap"
 
 # 各種ディレクトリのパスを設定します。
 GRAPH_DIR="data/graph"
@@ -60,13 +60,15 @@ process_method() {
 		"$DURING")
 			python scripts/draw.py \
 				"$GRAPH_DIR/$TYPE/$n"/*.json \
-				--dest "$DRAWING_DIR/$method_name/$TYPE/$n"
+				--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
+				--overlap-removal
 			;;
 		"$AFTER")
 			python scripts/draw.py \
 				--space "after_project" \
 				--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
-				"$GRAPH_DIR/$TYPE/$n"/*.json
+				"$GRAPH_DIR/$TYPE/$n"/*.json \
+				--overlap-removal
 			;;
 		*)
 			echo "エラー: 未知の手法です - $method_name" >&2
@@ -91,31 +93,31 @@ analyze_results() {
 	local result_prefix="$TYPE-$START-$END"
 
 	# Stress（ストレス）の計算と可視化
-	# python scripts/calc_stress.py \
-	# 	"$GRAPH_DIR/$TYPE.csv" \
-	# 	"$STRESS_DIR/$result_prefix.csv" \
-	# 	--methods "$AFTER" "$DURING"
+	python scripts/calc_stress.py \
+		"$GRAPH_DIR/$TYPE.csv" \
+		"$STRESS_DIR/$result_prefix.csv" \
+		--methods "${methods[0]}" "${methods[1]}"
 
 	python scripts/create_boxplot.py \
 		"$STRESS_DIR/$result_prefix.csv" \
 		"$STRESS_DIR/$result_prefix.png" \
-		--methods "$AFTER" "$DURING" \
-		--title "$AFTER stress vs $DURING stress" \
+		--methods "${methods[0]}" "${methods[1]}" \
+		--title "${methods[0]} stress vs ${methods[1]} stress" \
 		--ylabel "normalized stress" \
 		--xlabel "node size"
 
 	# Violation（制約違反）の計算と可視化
-	# python scripts/calc_violation.py \
-	# 	"$GRAPH_DIR/$TYPE.csv" \
-	# 	"$VIOLATION_DIR/$result_prefix.csv" \
-	# 	--methods "$AFTER" "$DURING" \
-	# 	--violations "$VIOLATION_TYPE" # ここを変更
+	python scripts/calc_violation.py \
+		"$GRAPH_DIR/$TYPE.csv" \
+		"$VIOLATION_DIR/$result_prefix.csv" \
+		--methods "${methods[0]}" "${methods[1]}" \
+		--violations "$VIOLATION_TYPE"
 
 	python scripts/create_boxplot.py \
 		"$VIOLATION_DIR/$result_prefix.csv" \
 		"$VIOLATION_DIR/$result_prefix.png" \
-		--methods "$AFTER" "$DURING" \
-		--title "$AFTER violation vs $DURING violation" \
+		--methods "${methods[0]}" "${methods[1]}" \
+		--title "${methods[0]} violation vs ${methods[1]} violation" \
 		--ylabel "average violation" \
 		--xlabel "node size"
 }
@@ -124,13 +126,13 @@ analyze_results() {
 # メイン処理
 # -----------------------------------------------------------------------------
 main() {
-	local all_methods=("$DURING, $AFTER")
+	local all_methods=("$AFTER" "$DURING")
 
-	# generate_graph_list
+	generate_graph_list
 
-	# for method in "${all_methods[@]}"; do
-	# 	process_method "$method"
-	# done
+	for method in "${all_methods[@]}"; do
+		process_method "$method"
+	done
 
 	analyze_results "${all_methods[@]}"
 
