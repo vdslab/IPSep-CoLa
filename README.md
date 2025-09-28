@@ -23,7 +23,7 @@ python src/data/generate_overlap_graphs.py
 ```
 for n in `seq -f '%04.0f' 100 100 2000`
 do
-  python scripts/draw_sgd.py --dest data/drawing/sgd/random_tree/$n data/graph/random_tree/$n/*
+  python scripts/draw.py --dest data/drawing/sgd/random_tree/$n data/graph/random_tree/$n/*
 done
 ```
 
@@ -41,7 +41,7 @@ done
 ```
 for n in `seq -f '%04.0f' 100 100 2000`
 do
-  python scripts/draw_sgd.py --dest data/drawing/sgd/overlap/$n --overlap-removal data/graph/overlap/$n/*
+  python scripts/draw.py --dest data/drawing/sgd/overlap/$n --overlap-removal data/graph/overlap/$n/*
 done
 ```
 
@@ -57,7 +57,7 @@ done
 ## Generate sgd cluster-no-overlap drawing
 
 ```
-parallel --bar 'python scripts/draw_sgd.py --dest=data/drawing/sgd/cluster/{1} --overlap-removal --cluster-overlap-removal data/graph/cluster/{1}/node_n={1}_{2}.json' ::: $(seq -f '%04.0f' 100 100 2000) ::: $(seq -f '%02.0f' 0 19)
+parallel --bar 'python scripts/draw.py --dest=data/drawing/sgd/cluster/{1} --overlap-removal --cluster-overlap-removal data/graph/cluster/{1}/node_n={1}_{2}.json' ::: $(seq -f '%04.0f' 100 100 2000) ::: $(seq -f '%02.0f' 0 19)
 ```
 
 ## Generate webcola cluster-no-overlap drawing
@@ -153,14 +153,14 @@ python scripts/add_circle_constraint.py <networkx graph file path>
 ## torus
 
 ```bash
-python scripts/draw_sgd_torus.py [option] <graph file path>
+python scripts/draw.py --space torus [option] <graph file path>
 python scripts/plot_torus.py <graph file> <drawing file> <output file>
 ```
 
 ## hyper
 
 ```bash
-python scripts/draw_sgd_hyper.py [option] <graph file path>
+python scripts/draw.py --space hyperbolic [option] <graph file path>
 python scripts/plot.py <graph file> <drawing file> <output file>
 ```
 
