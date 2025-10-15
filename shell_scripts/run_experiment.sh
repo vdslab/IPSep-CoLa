@@ -62,6 +62,7 @@ process_method() {
 	log_info "処理中: $method_name"
 
 	for n in $(seq -f "%04g" $START $STEP $END); do
+		echo "  ノード数: $n"
 		# 手法ごとに描画コマンドを実行
 		case "$method_name" in
 		"$SGD")
@@ -72,6 +73,7 @@ process_method() {
 		"$WEBCOLA")
 			mkdir -p "$DRAWING_DIR/$method_name/$TYPE/$n"
 			for i in $(seq -w 0 19); do
+				echo "    サブグラフ: $i"
 				node js/src/draw_webcola.js \
 					--graphFile "$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
 					--output "$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_$i.json"
@@ -112,9 +114,8 @@ analyze_results() {
 
 	python scripts/create_boxplot.py \
 		"$STRESS_DIR/$result_prefix.csv" \
-		"$STRESS_DIR"/"$result_prefix"_"$WEBCOLA"_"$SGD".png \
-		--methods "$WEBCOLA" "$SGD" \
-		--title "$WEBCOLA stress vs $SGD stress" \
+		"$STRESS_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".png \
+		--methods "${methods[0]}" "${methods[1]}" \
 		--ylabel "normalized stress" \
 		--xlabel "node size"
 
@@ -127,25 +128,22 @@ analyze_results() {
 
 	python scripts/create_boxplot.py \
 		"$VIOLATION_DIR/$result_prefix.csv" \
-		"$VIOLATION_DIR"/"$result_prefix"_"$WEBCOLA"_"$SGD".png \
-		--methods "$WEBCOLA" "$SGD" \
-		--title "$WEBCOLA violation vs $SGD violation" \
+		"$VIOLATION_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".png \
+		--methods "${methods[0]}" "${methods[1]}" \
 		--ylabel "average violation" \
 		--xlabel "node size"
 }
-
 # -----------------------------------------------------------------------------
 # メイン処理
 # -----------------------------------------------------------------------------
 main() {
-	local all_methods=("$SGD" "$WEBCOLA" "$UNICON")
-	# local all_methods=("$WEBCOLA")
+	local all_methods=("$WEBCOLA" "$SGD" "$UNICON")
 
-	# generate_graph_list
+	generate_graph_list
 
-	# for method in "${all_methods[@]}"; do
-	# 	process_method "$method"
-	# done
+	for method in "${all_methods[@]}"; do
+		process_method "$method"
+	done
 
 	analyze_results "${all_methods[@]}"
 
