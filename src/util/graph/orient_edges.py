@@ -8,6 +8,32 @@ from typing import Optional
 import networkx as nx
 
 
+def generate_y_gap_constraints(
+    graph: nx.Graph, gap: int = 1, seed: Optional[int] = None
+) -> dict:
+    """
+    無向グラフの辺にランダムなノード順序に基づいて向きを付け、y軸のギャップ制約を生成する
+    Args:
+        graph: NetworkXの無向グラフ
+        gap: y軸のギャップ(デフォルトは1)
+        seed: 乱数シード(再現性のため、オプション)
+    Returns:
+        dict: y軸のギャップ制約のリスト
+    Example:
+        >>> import networkx as nx
+        >>> G = nx.Graph()
+        >>> G.add_edges_from([(0, 1), (1, 2), (2, 0)])
+        >>> constraints = generate_y_gap_constraints(G, gap=2, seed=42)
+        >>> isinstance(constraints, list)
+        True
+    """
+    digraph = orient_edges_by_random_order(graph, seed=seed)
+    constraints = []
+    for u, v in digraph.edges():
+        constraints.append({"axis": "y", "left": u, "right": v, "gap": gap})
+    return constraints
+
+
 def orient_edges_by_random_order(
     graph: nx.Graph, seed: Optional[int] = None
 ) -> nx.DiGraph:
@@ -72,7 +98,11 @@ def main():
         "--seed", type=int, default=None, help="乱数シード(再現性のため)"
     )
 
+    import os
+
     args = parser.parse_args()
+    dirname = os.path.dirname(args.output)
+    os.makedirs(dirname, exist_ok=True)
 
     # グラフを読み込み
     with open(args.input) as f:
@@ -80,24 +110,17 @@ def main():
 
     graph = nx.node_link_graph(data)
 
-    # 無向グラフであることを確認
-    if isinstance(graph, nx.DiGraph):
-        print("警告: 入力グラフは既に有向グラフです。無向グラフに変換します。")
-        graph = graph.to_undirected()
-
-    # 辺に向きを付ける
-    directed_graph = orient_edges_by_random_order(graph, seed=args.seed)
+    constraint = generate_y_gap_constraints(graph, gap=1, seed=args.seed)
+    if "constraints" not in graph.graph:
+        graph.graph["constraints"] = []
+    graph.graph["constraints"] += constraint
 
     # 結果を保存
-    output_data = nx.node_link_data(directed_graph)
     with open(args.output, "w") as f:
-        json.dump(output_data, f, indent=2)
+        json.dump(nx.node_link_data(graph), f)
 
-    print(f"処理完了:")
-    print(f"  入力ノード数: {graph.number_of_nodes()}")
-    print(f"  入力辺数: {graph.number_of_edges()}")
-    print(f"  出力ノード数: {directed_graph.number_of_nodes()}")
-    print(f"  出力辺数: {directed_graph.number_of_edges()}")
+    print("処理完了:")
+    print(f"  入力ファイル: {args.input}")
     print(f"  出力ファイル: {args.output}")
 
 
