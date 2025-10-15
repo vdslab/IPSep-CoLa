@@ -14,8 +14,8 @@ def constraint_violation(graph, drawing):
     nodes = list(graph.nodes)
     s = 0
     for constraint in graph.graph["constraints"]:
-        u = nodes[constraint["left"]]
-        v = nodes[constraint["right"]]
+        u = nodes[int(constraint["left"])]
+        v = nodes[int(constraint["right"])]
         gap = constraint["gap"]
         if constraint["axis"] == "x":
             s += max(0, gap - (drawing[v][0] - drawing[u][0]))
@@ -48,7 +48,7 @@ def overlap_violation(graph, drawing):
 
 def overlap_violation_rect(graph, drawing):
     nodes = list(graph.nodes)
-    r = 20 * 2
+    r = 20 + 5
     s = 0
     node_pairs = list(itertools.combinations(nodes, 2))
 
