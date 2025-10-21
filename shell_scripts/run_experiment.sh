@@ -25,6 +25,8 @@ DRAWING_DIR="data/drawing"
 STRESS_DIR="result/stress"
 VIOLATION_DIR="result/violation"
 PLOT_DIR="result/plot"
+TYPE_FILE=$(echo "$TYPE" | tr '/' '_')
+OUTPUT_CSV="$GRAPH_DIR"/"$TYPE_FILE".csv
 
 # 評価する手法名を定義します。
 SGD="FullSGD(ours)"
@@ -45,12 +47,12 @@ log_info() {
 
 # 実験対象となるグラフのリストをCSVファイルとして生成します。
 generate_graph_list() {
-	log_info "グラフリストを生成中..."
-	local output_csv="$GRAPH_DIR/$TYPE.csv"
-	echo "name,type,n,path" >"$output_csv"
+	log_info "グラフリストを ${OUTPUT_CSV} に生成中..."
+
+	echo "name,type,n,path" >"$OUTPUT_CSV"
 	for n in $(seq -f "%04g" $START $STEP $END); do
 		for i in $(seq -w 0 19); do
-			echo "node_n=${n}_$i.json,$TYPE,$n,$TYPE/$n/node_n=${n}_$i.json" >>"$output_csv"
+			echo "node_n=${n}_$i.json,$TYPE,$n,$TYPE/$n/node_n=${n}_$i.json" >>"$OUTPUT_CSV"
 		done
 	done
 }
@@ -108,7 +110,7 @@ analyze_results() {
 
 	# Stress（ストレス）の計算と可視化
 	python scripts/calc_stress.py \
-		"$GRAPH_DIR/$TYPE.csv" \
+		"$OUTPUT_CSV" \
 		"$STRESS_DIR/$result_prefix.csv" \
 		--methods "${methods[@]}"
 
@@ -121,7 +123,7 @@ analyze_results() {
 
 	# Violation（制約違反）の計算と可視化
 	python scripts/calc_violation.py \
-		"$GRAPH_DIR/$TYPE.csv" \
+		"$OUTPUT_CSV" \
 		"$VIOLATION_DIR/$result_prefix.csv" \
 		--methods "${methods[@]}" \
 		--violations "$VIOLATION_TYPE" # ここを変更
