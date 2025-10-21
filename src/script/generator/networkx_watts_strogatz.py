@@ -29,6 +29,9 @@ def main():
     graph.graph["distance"] = distance.tolist()
     graph.graph["constraints"] = []
     data = nx.node_link_data(graph)
+    import os
+
+    os.makedirs(os.path.dirname(args.output), exist_ok=True)
     json.dump(data, open(args.output, "w"))
 
 
