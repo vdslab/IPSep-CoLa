@@ -1,4 +1,11 @@
 #!/bin/bash
 cd "$(dirname "$0")/.." || exit
+# -----------------------------------------------------------------------------
+# 引数チェック
+# -----------------------------------------------------------------------------
+if [ "$#" -ne 1 ]; then
+	echo "Usage: $0 TYPE"
+	exit 1
+fi
 
-bash shell_scripts/run_experiment.sh "scale_free" 100 2000 100 "constraint"
+bash shell_scripts/run_experiment.sh "$1" 100 300 100 "constraint"
