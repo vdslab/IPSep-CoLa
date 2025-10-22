@@ -44,21 +44,63 @@ def estimate_power_law_exponent(graph):
     return gamma
 
 
+def generate(output: str, n: int):
+    def trim_graph(graph: nx.DiGraph) -> nx.Graph:
+        """多重辺、自己ループを削除する"""
+        simple_graph = nx.Graph()
+        simple_graph.add_nodes_from(graph.nodes(data=True))
+        edges = [
+            (u, v, d)
+            for u, v, d in graph.edges(data=True)
+            if u != v and not simple_graph.has_edge(u, v)
+        ]
+        simple_graph.add_edges_from(edges)
+        return simple_graph
+
+    def create_graph(n):
+        graph = nx.scale_free_graph(n, alpha=0.20, beta=0.75, gamma=0.05, seed=None)
+        graph = trim_graph(graph)
+        if not nx.is_connected(graph):
+            raise ValueError("生成されたグラフが連結ではありません")
+        print(
+            "nodes:",
+            graph.number_of_nodes(),
+            "edges:",
+            graph.number_of_edges(),
+            "avg_deg:",
+            2 * graph.number_of_edges() / graph.number_of_nodes(),
+        )
+        graph = nx.relabel_nodes(graph, lambda x: str(x))
+
+        distance = nx.floyd_warshall_numpy(graph, weight=None)
+        graph.graph["distance"] = distance.tolist()
+        graph.graph["constraints"] = []
+        return graph
+
+    for i in range(10):
+        try:
+            graph = create_graph(n)
+            break
+        except ValueError:
+            if i == 9:
+                raise
+            print("再試行", i + 1)
+    return graph
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("output")
     parser.add_argument("--node-size", type=int, default=100)
-    parser.add_argument("--edge-length", type=int, default=20)
+    parser.add_argument("--edge-length", type=int, default=100)
     args = parser.parse_args(namespace=Arg)
 
-    graph = nx.scale_free_graph(args.node_size)
-    assert nx.is_connected(graph)
-    graph = nx.relabel_nodes(graph, lambda x: str(x))
+    graph = generate(args.output, args.node_size)
 
-    distance = nx.floyd_warshall_numpy(graph, weight=None)
-    graph.graph["distance"] = distance.tolist()
-    graph.graph["constraints"] = []
     data = nx.node_link_data(graph)
+    import os
+
+    os.makedirs(os.path.dirname(args.output), exist_ok=True)
     json.dump(data, open(args.output, "w"))
 
 

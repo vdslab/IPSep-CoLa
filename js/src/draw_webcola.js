@@ -11,7 +11,7 @@ function layout(graph, options) {
     .nodes(graph.nodes)
     .links(graph.links)
     .constraints(graph.graph.constraints)
-    .linkDistance(20);
+    .linkDistance(100);
 
   if (clusters) {
     d3cola.groups(clusters);
