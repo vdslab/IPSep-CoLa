@@ -94,6 +94,7 @@ def main():
     )
     parser.add_argument("input", help="入力JSONファイル(NetworkXのnode-link形式)")
     parser.add_argument("output", help="出力JSONファイル")
+    parser.add_argument("--gap", default=100)
     parser.add_argument(
         "--seed", type=int, default=None, help="乱数シード(再現性のため)"
     )
@@ -110,7 +111,7 @@ def main():
 
     graph = nx.node_link_graph(data)
 
-    constraint = generate_y_gap_constraints(graph, gap=1, seed=args.seed)
+    constraint = generate_y_gap_constraints(graph, gap=args.gap, seed=args.seed)
     if "constraints" not in graph.graph:
         graph.graph["constraints"] = []
     graph.graph["constraints"] += constraint
