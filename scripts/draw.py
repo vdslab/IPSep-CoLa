@@ -20,6 +20,7 @@ def main():
     parser.add_argument(
         "--cluster-overlap-removal", action=argparse.BooleanOptionalAction
     )
+    parser.add_argument("--output-suffix", default="", help="Suffix to add to output filenames")
     parser.add_argument("input", nargs="+")
     args = parser.parse_args()
 
@@ -50,7 +51,9 @@ def main():
         }
 
         pos = sgd(**sgd_args)
-        output_path = os.path.join(args.dest, basename)
+        name_without_ext = os.path.splitext(basename)[0]
+        output_filename = f"{name_without_ext}{args.output_suffix}.json"
+        output_path = os.path.join(args.dest, output_filename)
         with open(output_path, "w") as fp:
             json.dump(pos, fp, ensure_ascii=False)
 

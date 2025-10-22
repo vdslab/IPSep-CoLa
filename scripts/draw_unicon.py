@@ -15,6 +15,7 @@ def main():
     parser.add_argument(
         "--cluster-overlap-removal", action=argparse.BooleanOptionalAction
     )
+    parser.add_argument("--output-suffix", default="", help="Suffix to add to output filenames")
     parser.add_argument("input", nargs="+")
     args = parser.parse_args()
 
@@ -31,7 +32,9 @@ def main():
             overlap_removal=args.overlap_removal,
             clusters=clusters,
         )
-        json.dump(pos, open(os.path.join(args.dest, basename), "w"), ensure_ascii=False)
+        name_without_ext = os.path.splitext(basename)[0]
+        output_filename = f"{name_without_ext}{args.output_suffix}.json"
+        json.dump(pos, open(os.path.join(args.dest, output_filename), "w"), ensure_ascii=False)
 
 
 if __name__ == "__main__":
