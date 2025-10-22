@@ -63,5 +63,5 @@ def plot_graph(
     plt.margins(0)
     plt.gca().invert_yaxis()
 
-    plt.savefig(file_name, bbox_inches="tight", pad_inches=0.0)
+    plt.savefig(file_name, bbox_inches="tight", pad_inches=0.01)
     plt.close()
