@@ -65,38 +65,44 @@ process_method() {
 
 	for n in $(seq -f "%04g" $START $STEP $END); do
 		echo "  ノード数: $n"
-		# 手法ごとに描画コマンドを実行
-		case "$method_name" in
-		"$SGD")
-			python scripts/draw.py --space euclidean \
-				"$GRAPH_DIR/$TYPE/$n"/*.json \
-				--dest "$DRAWING_DIR/$method_name/$TYPE/$n"
-			;;
-		"$WEBCOLA")
-			mkdir -p "$DRAWING_DIR/$method_name/$TYPE/$n"
-			for i in $(seq -w 0 19); do
-				echo "    サブグラフ: $i"
-				node js/src/draw_webcola.js \
-					--graphFile "$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
-					--output "$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_$i.json"
+		mkdir -p "$DRAWING_DIR/$method_name/$TYPE/$n"
+		
+		# 各グラフに対して10回実行
+		for i in $(seq -w 0 19); do
+			echo "    サブグラフ: $i"
+			for run in $(seq 0 9); do
+				# 手法ごとに描画コマンドを実行
+				case "$method_name" in
+				"$SGD")
+					python scripts/draw.py --space euclidean \
+						"$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
+						--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
+						--output-suffix "_run_$run"
+					;;
+				"$WEBCOLA")
+					node js/src/draw_webcola.js \
+						--graphFile "$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
+						--output "$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_${i}_run_${run}.json"
+					;;
+				"$UNICON")
+					python scripts/draw_unicon.py \
+						"$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
+						--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
+						--output-suffix "_run_$run"
+					;;
+				*)
+					echo "エラー: 未知の手法です - $method_name" >&2
+					return 1
+					;;
+				esac
 			done
-			;;
-		"$UNICON")
-			python scripts/draw_unicon.py \
-				--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
-				"$GRAPH_DIR/$TYPE/$n"/*.json
-			;;
-		*)
-			echo "エラー: 未知の手法です - $method_name" >&2
-			return 1
-			;;
-		esac
+		done
 
-		# 描画結果をプロット
+		# 描画結果をプロット (最初の実行結果 run_0 を使用)
 		for i in $(seq -w 0 5 19); do
 			python scripts/plot.py \
 				"$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
-				"$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_$i.json" \
+				"$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_${i}_run_0.json" \
 				"$PLOT_DIR/$method_name/$TYPE/$n/node_n=${n}_$i.png"
 		done
 	done
