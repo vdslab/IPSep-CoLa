@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import random
 
 import networkx as nx
 
@@ -16,6 +17,9 @@ def main():
         "--cluster-overlap-removal", action=argparse.BooleanOptionalAction
     )
     parser.add_argument("--output-suffix", default="", help="Suffix to add to output filenames")
+    parser.add_argument(
+        "--seed", type=int, default=None, help="Random seed (None for random)"
+    )
     parser.add_argument("input", nargs="+")
     args = parser.parse_args()
 
@@ -26,11 +30,16 @@ def main():
         clusters = None
         if args.cluster_overlap_removal:
             clusters = [graph.nodes[u]["group"] for u in graph.nodes]
+        
+        # Generate random seed if not specified
+        seed = args.seed if args.seed is not None else random.randint(0, 2**32 - 1)
+        
         pos = sgd(
             graph,
             iterations=args.iterations,
             overlap_removal=args.overlap_removal,
             clusters=clusters,
+            seed=seed,
         )
         name_without_ext = os.path.splitext(basename)[0]
         output_filename = f"{name_without_ext}{args.output_suffix}.json"
