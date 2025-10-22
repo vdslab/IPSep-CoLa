@@ -44,7 +44,7 @@ def estimate_power_law_exponent(graph):
     return gamma
 
 
-def generate(output: str, n: int):
+def generate(output: str, n: int, edge_length: int):
     def trim_graph(graph: nx.DiGraph) -> nx.Graph:
         """多重辺、自己ループを削除する"""
         simple_graph = nx.Graph()
@@ -58,7 +58,7 @@ def generate(output: str, n: int):
         return simple_graph
 
     def create_graph(n):
-        graph = nx.scale_free_graph(n, alpha=0.20, beta=0.75, gamma=0.05, seed=None)
+        graph = nx.scale_free_graph(n)
         graph = trim_graph(graph)
         if not nx.is_connected(graph):
             raise ValueError("生成されたグラフが連結ではありません")
@@ -73,6 +73,7 @@ def generate(output: str, n: int):
         graph = nx.relabel_nodes(graph, lambda x: str(x))
 
         distance = nx.floyd_warshall_numpy(graph, weight=None)
+        distance *= edge_length
         graph.graph["distance"] = distance.tolist()
         graph.graph["constraints"] = []
         return graph
@@ -95,7 +96,7 @@ def main():
     parser.add_argument("--edge-length", type=int, default=100)
     args = parser.parse_args(namespace=Arg)
 
-    graph = generate(args.output, args.node_size)
+    graph = generate(args.output, args.node_size, args.edge_length)
 
     data = nx.node_link_data(graph)
     import os
