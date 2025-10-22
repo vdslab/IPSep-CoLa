@@ -6,6 +6,7 @@ import math
 import os
 
 import networkx as nx
+import numpy as np
 
 
 def constraint_violation(graph, drawing):
@@ -89,16 +90,27 @@ def main():
             graph_filepath = os.path.join(os.path.dirname(args.csv_file), row["path"])
             graph = nx.node_link_graph(json.load(open(graph_filepath)))
             print("\r", method, graph_filepath)
-            drawing_filepath = (
-                f"data/drawing/{method}/{row['type']}/{row['n']:0>4}/{row['name']}"
-            )
-            drawing = json.load(open(drawing_filepath))
-            s = 0
-            if "constraint" in args.violations:
-                s += constraint_violation(graph, drawing)
-            if "overlap" in args.violations:
-                s += overlap_violation_rect(graph, drawing)
-            writer.writerow([row["name"], method, row["type"], row["n"], s])
+            
+            # 10回の実行結果から違反量を計算
+            violation_values = []
+            for run in range(10):
+                # ファイル名から.jsonを除去してrun番号を追加
+                name_without_ext = row["name"].replace(".json", "")
+                drawing_filepath = (
+                    f"data/drawing/{method}/{row['type']}/{int(row['n']):0>4}/"
+                    f"{name_without_ext}_run_{run}.json"
+                )
+                drawing = json.load(open(drawing_filepath))
+                s = 0
+                if "constraint" in args.violations:
+                    s += constraint_violation(graph, drawing)
+                if "overlap" in args.violations:
+                    s += overlap_violation_rect(graph, drawing)
+                violation_values.append(s)
+            
+            # 中央値を計算
+            median_violation = np.median(violation_values)
+            writer.writerow([row["name"], method, row["type"], row["n"], median_violation])
 
 
 def test_overlap_violation():
