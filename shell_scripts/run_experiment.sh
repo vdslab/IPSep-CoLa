@@ -66,45 +66,47 @@ process_method() {
 	for n in $(seq -f "%04g" $START $STEP $END); do
 		echo "  ノード数: $n"
 		mkdir -p "$DRAWING_DIR/$method_name/$TYPE/$n"
-		
-		# 各グラフに対して10回実行
+
+		# 各グラフに対して10回実行（GNU Parallelで並列化）
 		for i in $(seq -w 0 19); do
 			echo "    サブグラフ: $i"
-			for run in $(seq 0 9); do
-				# 手法ごとに描画コマンドを実行
-				case "$method_name" in
-				"$SGD")
+
+			# GNU Parallelで3回の実行を並列処理
+			seq 0 9 | parallel --bar -j 3 "
+				run={}
+				case '$method_name' in
+				'$SGD')
 					python scripts/draw.py --space euclidean \
-						"$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
-						--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
-						--output-suffix "_run_$run"
+						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
+						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
+						--output-suffix '_run_{}'
 					;;
-				"$WEBCOLA")
+				'$WEBCOLA')
 					node js/src/draw_webcola.js \
-						--graphFile "$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
-						--output "$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_${i}_run_${run}.json"
+						--graphFile '$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
+						--output '$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_${i}_run_{}.json'
 					;;
-				"$UNICON")
+				'$UNICON')
 					python scripts/draw_unicon.py \
-						"$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
-						--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
-						--output-suffix "_run_$run"
+						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
+						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
+						--output-suffix '_run_{}'
 					;;
 				*)
-					echo "エラー: 未知の手法です - $method_name" >&2
-					return 1
+					echo 'エラー: 未知の手法です - $method_name' >&2
+					exit 1
 					;;
 				esac
-			done
+			"
 		done
 
-		# 描画結果をプロット (最初の実行結果 run_0 を使用)
-		for i in $(seq -w 0 5 19); do
+		# 描画結果をプロット (最初の実行結果 run_0 を使用、GNU Parallelで並列化)
+		seq -w 0 5 19 | parallel -j 4 "
 			python scripts/plot.py \
-				"$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
-				"$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_${i}_run_0.json" \
-				"$PLOT_DIR/$method_name/$TYPE/$n/node_n=${n}_$i.png"
-		done
+				'$GRAPH_DIR/$TYPE/$n/node_n=${n}_{}.json' \
+				'$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_{}_run_0.json' \
+				'$PLOT_DIR/$method_name/$TYPE/$n/node_n=${n}_{}.png'
+		"
 	done
 }
 
@@ -147,11 +149,11 @@ analyze_results() {
 main() {
 	local all_methods=("$WEBCOLA" "$SGD" "$UNICON")
 
-	generate_graph_list
+	# generate_graph_list
 
-	for method in "${all_methods[@]}"; do
-		process_method "$method"
-	done
+	# for method in "${all_methods[@]}"; do
+	# 	process_method "$method"
+	# done
 
 	analyze_results "${all_methods[@]}"
 
