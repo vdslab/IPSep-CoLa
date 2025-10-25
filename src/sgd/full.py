@@ -43,7 +43,7 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         # print("Overlap removal Rect size:", nx_graph.nodes["0"]["shape"])
         for i, u in enumerate(nx_graph.nodes):
             shape = nx_graph.nodes[u]["shape"]
-            size.append([shape["width"] * 2, shape["height"] * 2])
+            size.append([shape["width"], shape["height"]])
     x_constraints = [
         eg.Constraint(indices[str(c["left"])], indices[str(c["right"])], c["gap"])
         for c in nx_graph.graph["constraints"]

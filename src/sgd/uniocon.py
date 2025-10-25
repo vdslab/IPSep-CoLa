@@ -25,7 +25,7 @@ def print_progress_bar(iteration, total, bar_length=40):
 def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, seed=0):
     parameter = SGDParameter(iterator=iterations, eps=eps, seed=seed)
     dist_list = nx_graph.graph["distance"]
-    print(nx_graph)
+    # print(nx_graph)
 
     eggraph, indices = nxgraph_to_eggraph(nx_graph)
     dist = eg.DistanceMatrix(eggraph)
@@ -45,9 +45,9 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         overlap.iterations = 1
         overlap.strength = 2
 
-        # for i, u in enumerate(nx_graph.nodes):
-        #     shape = nx_graph.nodes[u]["shape"]
-        #     size.append([shape["width"] + 5, shape["height"] + 5])
+        for i, u in enumerate(nx_graph.nodes):
+            shape = nx_graph.nodes[u]["shape"]
+            size.append([shape["width"], shape["height"]])
 
     # 制約の種類ごとに分割
     x_constraints: list = [
@@ -83,10 +83,10 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         print_progress_bar(i, parameter.iter)
         sgd_scheduler.step(step)
         if overlap_removal:
-            overlap.apply_with_drawing_euclidean_2d(drawing)
-            # eg.project_rectangle_no_overlap_constraints_2d(
-            #     drawing, lambda u, d: size[u][d]
-            # )
+            # overlap.apply_with_drawing_euclidean_2d(drawing)
+            eg.project_rectangle_no_overlap_constraints_2d(
+                drawing, lambda u, d: size[u][d]
+            )
         for constraint in x_constraints:
             eg.project_1d(drawing, 0, [constraint])
         for constraint in y_constraints:

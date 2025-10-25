@@ -19,8 +19,8 @@ function layout(graph, options) {
 
   if (overlapRemvoal) {
     for (const node of graph.nodes) {
-      node.width = node.shape.width + 5;
-      node.height = node.shape.height + 5;
+      node.width = node.shape.width;
+      node.height = node.shape.height;
     }
     d3cola.avoidOverlaps(true);
   }
