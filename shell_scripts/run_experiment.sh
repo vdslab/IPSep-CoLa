@@ -62,6 +62,18 @@ generate_graph_list() {
 process_method() {
 	local method_name="$1"
 	log_info "処理中: $method_name"
+	PAUSE_FLAG="/tmp/draw.pause"
+
+	# VIOLATION_TYPEに基づいてフラグを設定
+	if [ "$VIOLATION_TYPE" = "overlap" ]; then
+		SGD_OVERLAP_FLAG="--overlap-removal"
+		WEBCOLA_OVERLAP_FLAG="--overlapRemoval"
+		UNICON_OVERLAP_FLAG="--overlap-removal"
+	else
+		SGD_OVERLAP_FLAG=""
+		WEBCOLA_OVERLAP_FLAG=""
+		UNICON_OVERLAP_FLAG=""
+	fi
 
 	for n in $(seq -f "%04g" $START $STEP $END); do
 		echo "  ノード数: $n"
@@ -72,25 +84,28 @@ process_method() {
 			echo "    サブグラフ: $i"
 
 			# GNU Parallelで3回の実行を並列処理
-			seq 0 9 | parallel --bar -j 3 "
-				run={}
+			seq 0 9 | parallel --bar -j 10 "
+				while [ -f '$PAUSE_FLAG' ]; do sleep 1; done
 				case '$method_name' in
 				'$SGD')
 					python scripts/draw.py --space euclidean \
 						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
 						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
-						--output-suffix '_run_{}'
+						--output-suffix '_run_{}' \
+						$SGD_OVERLAP_FLAG
 					;;
 				'$WEBCOLA')
 					node js/src/draw_webcola.js \
 						--graphFile '$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
-						--output '$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_${i}_run_{}.json'
+						--output '$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_${i}_run_{}.json' \
+						$WEBCOLA_OVERLAP_FLAG
 					;;
 				'$UNICON')
 					python scripts/draw_unicon.py \
 						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
 						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
-						--output-suffix '_run_{}'
+						--output-suffix '_run_{}' \
+						$UNICON_OVERLAP_FLAG
 					;;
 				*)
 					echo 'エラー: 未知の手法です - $method_name' >&2
@@ -149,11 +164,11 @@ analyze_results() {
 main() {
 	local all_methods=("$WEBCOLA" "$SGD" "$UNICON")
 
-	# generate_graph_list
+	generate_graph_list
 
-	# for method in "${all_methods[@]}"; do
-	# 	process_method "$method"
-	# done
+	for method in "${all_methods[@]}"; do
+		process_method "$method"
+	done
 
 	analyze_results "${all_methods[@]}"
 
