@@ -47,24 +47,37 @@ def overlap_violation(graph, drawing):
     return s / len(node_pairs)
 
 
-def overlap_violation_rect(graph, drawing):
-    nodes = list(graph.nodes)
-    r = 20 + 5
-    s = 0
-    node_pairs = list(itertools.combinations(nodes, 2))
+def overlap_violation_rect(graph, drawing, eps: float = 1e-1) -> float:
+    node_ids = list(graph.nodes)
+    pairs = list(itertools.combinations(node_ids, 2))
+    if not pairs:
+        return 0.0
 
-    for u, v in node_pairs:
-        pos_u = drawing[u]
-        pos_v = drawing[v]
-        # if r - abs(pos_v[0] - pos_u[0]) > 1e1:
-        #     print(abs(pos_v[0] - pos_u[0]), r - abs(pos_v[0] - pos_u[0]))
-        xviolation = max(0, r - abs(pos_v[0] - pos_u[0]))
-        yviolation = max(0, r - abs(pos_v[1] - pos_u[1]))
-        if xviolation > 1e-1 and yviolation > 1e-1:
-            s += xviolation + yviolation
+    total_violation = 0.0
 
-    # 違反量の合計をペアの総数で割り、平均値を返す
-    return s / len(node_pairs)
+    for u, v in pairs:
+        x_u, y_u = drawing[u]
+        x_v, y_v = drawing[v]
+
+        shape_u = graph.nodes[u]["shape"]
+        shape_v = graph.nodes[v]["shape"]
+
+        # 重ならないために必要な中心間距離（軸ごと）
+        required_clearance_x = (shape_u["width"] + shape_v["width"]) / 2.0
+        required_clearance_y = (shape_u["height"] + shape_v["height"]) / 2.0
+
+        # 実際の中心差分
+        dx = abs(x_v - x_u)
+        dy = abs(y_v - y_u)
+
+        # 重なり量（正のとき重なっている）
+        overlap_x = max(0.0, required_clearance_x - dx)
+        overlap_y = max(0.0, required_clearance_y - dy)
+
+        if overlap_x > eps and overlap_y > eps:
+            total_violation += overlap_x + overlap_y
+
+    return total_violation / len(pairs)
 
 
 def main():
@@ -90,7 +103,7 @@ def main():
             graph_filepath = os.path.join(os.path.dirname(args.csv_file), row["path"])
             graph = nx.node_link_graph(json.load(open(graph_filepath)))
             print("\r", method, graph_filepath)
-            
+
             # 10回の実行結果から違反量を計算
             violation_values = []
             for run in range(10):
@@ -107,10 +120,12 @@ def main():
                 if "overlap" in args.violations:
                     s += overlap_violation_rect(graph, drawing)
                 violation_values.append(s)
-            
+
             # 中央値を計算
             median_violation = np.median(violation_values)
-            writer.writerow([row["name"], method, row["type"], row["n"], median_violation])
+            writer.writerow(
+                [row["name"], method, row["type"], row["n"], median_violation]
+            )
 
 
 def test_overlap_violation():
