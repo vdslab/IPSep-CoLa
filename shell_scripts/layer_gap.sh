@@ -8,4 +8,6 @@ if [ "$#" -ne 1 ]; then
 	exit 1
 fi
 
-bash shell_scripts/run_experiment.sh "$1" 100 300 100 "constraint"
+read -r -e -p "start node count: " START_N
+read -r -e -p "end node count: " END_N
+bash shell_scripts/run_experiment.sh "$1" "$START_N" "$END_N" 100 "constraint"
