@@ -120,10 +120,5 @@ def main():
     with open(args.output, "w") as f:
         json.dump(nx.node_link_data(graph), f)
 
-    print("処理完了:")
-    print(f"  入力ファイル: {args.input}")
-    print(f"  出力ファイル: {args.output}")
-
-
 if __name__ == "__main__":
     main()
