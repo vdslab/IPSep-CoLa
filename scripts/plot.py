@@ -14,6 +14,7 @@ def main():
     parser.add_argument("output")
     parser.add_argument("--show-violation", action=argparse.BooleanOptionalAction)
     parser.add_argument("--node-size", type=int, default=30)
+    parser.add_argument("--labeled", action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
 
@@ -26,6 +27,7 @@ def main():
         args.output,
         show_violation=args.show_violation,
         node_size=args.node_size,
+        labeled=args.labeled,
     )
 
 

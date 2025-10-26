@@ -14,6 +14,7 @@ def plot_graph(
     aspect="equal",
     show_violation=False,
     node_size=30,
+    labeled=False,
 ):
     matplotlib.use("agg")
     fig, ax = plt.subplots(figsize=(10, 10), dpi=150)
@@ -50,7 +51,7 @@ def plot_graph(
 
     nx.draw(
         G,
-        with_labels=False,
+        with_labels=labeled,
         pos=pos,
         node_shape="s",
         node_size=node_size,
