@@ -5,40 +5,59 @@ import networkx as nx
 
 
 class Arg(argparse.Namespace):
-    output: str
-    number: int = 10
-    edge_length: int = 1
-    node_width: int = 20
-    node_height: int = 20
+    dest: str
+    edge_length: int
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("output")
-    parser.add_argument("--number", type=int, default=10)
-    parser.add_argument("--edge-length", type=int, default=20)
-    parser.add_argument("--node-width", type=int, default=20)
-    parser.add_argument("--node-height", type=int, default=20)
+    parser.add_argument("--dest", required=True, help="directory to save graphs")
+    parser.add_argument("--edge-length", type=int, default=100)
     args: Arg = parser.parse_args()
 
-    _graph: nx.Graph = nx.petersen_graph()
-    graph = nx.Graph()
-    graph.add_nodes_from([str(v) for v in _graph.nodes])
-    graph.add_edges_from([(str(u), str(v)) for u, v in _graph.edges])
+    import os
 
-    # for u in graph.nodes:
-    #     graph.nodes[u]["shape"] = {
-    #         "width": args.node_width,
-    #         "height": args.node_height,
-    #         "r": args.node_width,
-    #     }
+    os.makedirs(args.dest, exist_ok=True)
 
-    distance = nx.floyd_warshall_numpy(graph, weight=None) * args.edge_length
-    graph.graph["distance"] = distance.tolist()
-    graph.graph["constraints"] = []
+    graph_generators = [
+        nx.bull_graph,
+        nx.chvatal_graph,
+        nx.cubical_graph,
+        nx.desargues_graph,
+        nx.diamond_graph,
+        nx.dodecahedral_graph,
+        nx.frucht_graph,
+        nx.heawood_graph,
+        nx.hoffman_singleton_graph,
+        nx.house_graph,
+        nx.house_x_graph,
+        nx.icosahedral_graph,
+        nx.krackhardt_kite_graph,
+        nx.moebius_kantor_graph,
+        nx.octahedral_graph,
+        nx.pappus_graph,
+        nx.petersen_graph,
+        nx.sedgewick_maze_graph,
+        nx.tetrahedral_graph,
+        nx.truncated_cube_graph,
+        nx.truncated_tetrahedron_graph,
+        nx.tutte_graph,
+    ]
 
-    data = nx.node_link_data(graph)
-    json.dump(data, open(args.output, "w"))
+    for generator in graph_generators:
+        name = generator.__name__
+        output = os.path.join(args.dest, f"{name}.json")
+        print(f"Generating graph: {name}")
+        graph: nx.Graph = generator()
+        graph = nx.relabel_nodes(graph, lambda x: str(x))
+
+        distance = nx.floyd_warshall_numpy(graph, weight=None)
+        distance *= args.edge_length
+        graph.graph["distance"] = distance.tolist()
+        graph.graph["constraints"] = []
+
+        data = nx.node_link_data(graph)
+        json.dump(data, open(output, "w"))
 
 
 if __name__ == "__main__":
