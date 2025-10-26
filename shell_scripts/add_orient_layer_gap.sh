@@ -27,34 +27,30 @@ echo "selected type: $graph_type"
 for n in $(seq -f "%04g" 100 100 2000); do
 	echo "Processing node_$n.json ..."
 
-	for m in $(seq -f "%02g" 0 19); do
-		file_name="$SAVE_DIR/$n/node_n=${n}_$m.json"
-		echo "$file_name"
-
-		case "$graph_type" in
+	seq -f "%02g" 0 19 | parallel --bar -j 8 "
+		case '$graph_type' in
 		# watts_strogatz
 		1)
 			python src/script/generator/networkx_watts_strogatz.py \
-				"$file_name" \
-				--node-number "$n" \
-				--neighbor-number 4 \
-				--rewiring-prob 0.5
+				'$SAVE_DIR/$n/node_n=${n}_{}.json' \
+				--node-number '$n' \
+				--neighbor-number 2 \
+				--rewiring-prob 0.3
 			;;
 		# scale_free
 		2)
 			python src/script/generator/networkx_scale_free.py \
-				"$file_name" \
-				--node-size "$n"
+				'$SAVE_DIR/$n/node_n=${n}_{}.json' \
+				--node-size '$n'
 			;;
 		*)
-			echo "Invalid graph type selected."
+			echo 'Invalid graph type selected.'
 			exit 1
 			;;
 		esac
-		echo "add orient ..."
-		python src/util/graph/orient_edges.py "$file_name" "$file_name"
-
-	done
+		# echo 'add orient ...'
+		python src/util/graph/orient_edges.py '$SAVE_DIR/$n/node_n=${n}_{}.json' '$SAVE_DIR/$n/node_n=${n}_{}.json'
+	"
 done
 
 echo "Finished generating orientation files."
