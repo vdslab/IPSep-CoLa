@@ -26,7 +26,7 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     dist = eg.DistanceMatrix(eggraph)
     for i, u in enumerate(nx_graph.nodes):
         for j, v in enumerate(nx_graph.nodes):
-            dist.set(indices[u], indices[v], float(dist_list[j][i]) * 0.04)
+            dist.set(indices[u], indices[v], float(dist_list[j][i]) / diameter / 100.0)
 
     drawing = eg.DrawingTorus2d.initial_placement(eggraph)
     sgd = eg.FullSgd.new_with_distance_matrix(dist)
@@ -34,7 +34,7 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
 
     # size = []
     if overlap_removal:
-        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.04)
+        overlap = eg.OverwrapRemoval(eggraph, lambda node_index: 0.06)
         overlap.iterations = 5
 
     # x_constraints = [
