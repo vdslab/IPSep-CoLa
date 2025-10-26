@@ -72,10 +72,15 @@ def nearest_xy_torus2d(center, other):
     return near
 
 
-def draw_torus(graph, pos, cell_size=1, output="./test.png"):
+def draw_torus(
+    graph, pos, cell_size=1, output="./test.png", node_size=30, show_violation=False
+):
+    import matplotlib
     import matplotlib.pyplot as plt
 
-    fig, ax = plt.subplots(figsize=(10, 10))
+    matplotlib.use("agg")
+
+    fig, ax = plt.subplots(figsize=(10, 10), dpi=150)
     ax.set_aspect("equal")
 
     # 1. BFS to unwrap coordinates into a single Euclidean representation
@@ -105,6 +110,18 @@ def draw_torus(graph, pos, cell_size=1, output="./test.png"):
                 node: (xy - offset_vector) * cell_size
                 for node, xy in unwrapped_pos.items()
             }
+            node_colors = ["#1f78b4"] * len(graph.nodes)
+            if show_violation:
+                # highlight nodes that nodepair is overlapped
+                for u in graph.nodes:
+                    for v in graph.nodes:
+                        if u == v:
+                            continue
+                        dist = np.linalg.norm(unwrapped_pos[u] - unwrapped_pos[v])
+                        print(dist)
+                        if dist < 0.10:  # threshold for overlap
+                            node_colors[list(graph.nodes).index(u)] = "red"
+                            node_colors[list(graph.nodes).index(v)] = "red"
 
             # if i == 0 and j == 0:
             nx.draw_networkx_nodes(
@@ -112,7 +129,8 @@ def draw_torus(graph, pos, cell_size=1, output="./test.png"):
                 pos=tile_pos,
                 ax=ax,
                 node_shape="o",
-                node_size=800,
+                node_size=node_size,
+                node_color=node_colors,
             )
             # nx.draw_networkx_labels(graph, pos=tile_pos, ax=ax)
 
@@ -131,6 +149,7 @@ def draw_torus(graph, pos, cell_size=1, output="./test.png"):
                         [vv[1] * cell_size, uu[1] * cell_size],
                         color="gray",
                         zorder=0,  # Draw edges behind nodes
+                        linewidth=6,
                     )
                     ax.add_line(line)
 
@@ -177,5 +196,7 @@ def draw_torus(graph, pos, cell_size=1, output="./test.png"):
     ax.axhline(0, color="k", linestyle=":")
     ax.axhline(cell_size, color="k", linestyle=":")
     print("save_fig")
+    plt.axis("off")
+    plt.margins(0)
     plt.gca().invert_yaxis()
-    plt.savefig(output)
+    plt.savefig(output, bbox_inches="tight", pad_inches=0.01)

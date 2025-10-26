@@ -13,6 +13,7 @@ def main():
     parser.add_argument("drawing_file")
     parser.add_argument("output")
     parser.add_argument("--show-violation", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--node-size", type=int, default=30)
 
     args = parser.parse_args()
 
@@ -20,7 +21,7 @@ def main():
     pos = json.load(open(args.drawing_file))
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
 
-    draw_torus(graph, pos, output=args.output)
+    draw_torus(graph, pos, output=args.output, node_size=args.node_size, show_violation=args.show_violation)
 
 
 if __name__ == "__main__":
