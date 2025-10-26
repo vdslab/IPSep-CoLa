@@ -3,7 +3,9 @@ import csv
 import itertools
 import json
 import math
+import multiprocessing
 import os
+from concurrent.futures import ProcessPoolExecutor
 
 import networkx as nx
 import numpy as np
@@ -47,6 +49,18 @@ def overlap_violation(graph, drawing):
     return s / len(node_pairs)
 
 
+def calculate_violation_for_run(args):
+    """単一runの違反量計算を行う"""
+    graph, drawing_filepath, violations = args
+    drawing = json.load(open(drawing_filepath))
+    s = 0
+    if "constraint" in violations:
+        s += constraint_violation(graph, drawing)
+    if "overlap" in violations:
+        s += overlap_violation_rect(graph, drawing)
+    return s
+
+
 def overlap_violation_rect(graph, drawing, eps: float = 1e-1) -> float:
     node_ids = list(graph.nodes)
     pairs = list(itertools.combinations(node_ids, 2))
@@ -76,6 +90,9 @@ def overlap_violation_rect(graph, drawing, eps: float = 1e-1) -> float:
 
         if overlap_x > eps and overlap_y > eps:
             total_violation += overlap_x + overlap_y
+            # print(
+            #     f"Overlap between {u} and {v}: overlap_x={overlap_x}, overlap_y={overlap_y}"
+            # )
 
     return total_violation / len(pairs)
 
@@ -104,8 +121,8 @@ def main():
             graph = nx.node_link_graph(json.load(open(graph_filepath)))
             print("\r", method, graph_filepath)
 
-            # 10回の実行結果から違反量を計算
-            violation_values = []
+            # 10回の実行結果から違反量を計算（並列実行）
+            tasks = []
             for run in range(10):
                 # ファイル名から.jsonを除去してrun番号を追加
                 name_without_ext = row["name"].replace(".json", "")
@@ -113,13 +130,11 @@ def main():
                     f"data/drawing/{method}/{row['type']}/{int(row['n']):0>4}/"
                     f"{name_without_ext}_run_{run}.json"
                 )
-                drawing = json.load(open(drawing_filepath))
-                s = 0
-                if "constraint" in args.violations:
-                    s += constraint_violation(graph, drawing)
-                if "overlap" in args.violations:
-                    s += overlap_violation_rect(graph, drawing)
-                violation_values.append(s)
+                tasks.append((graph, drawing_filepath, args.violations))
+            
+            # 並列実行
+            with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+                violation_values = list(executor.map(calculate_violation_for_run, tasks))
 
             # 中央値を計算
             median_violation = np.median(violation_values)
