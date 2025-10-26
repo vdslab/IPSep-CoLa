@@ -14,10 +14,11 @@ read -r -e -p "save directory: " SAVE_DIR
 
 for n in $(seq -f "%04g" 100 100 2000); do
 	echo "Processing node_$n.json ..."
-
 	seq -f "%02g" 0 19 | parallel --bar -j 8 "
-		python src/data/add_rect-overlap_constraint.py \
+		python src/data/add_rect_overlap_shape.py \
 			--input '$GRAPH_DIR/$n/node_n=${n}_{}.json' \
-			--output '$SAVE_DIR/$n/node_n=${n}_{}.json'
+			--output '$SAVE_DIR/$n/node_n=${n}_{}.json' \
+			--width 200 \
+			--height 200
 		"
 done
