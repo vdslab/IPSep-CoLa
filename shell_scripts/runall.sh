@@ -6,9 +6,9 @@ cd "$(dirname "$0")/.." || exit
 #   python scripts/draw.py --space euclidean --dest data/drawing/sgd/overlap/$n --overlap-removal data/graph/overlap/$n/*
 # done
 
-for n in $(seq -f '%04.0f' 100 100 2000); do
-	python scripts/draw_webcola.py --dest data/drawing/webcola/overlap/$n --overlap-removal data/graph/overlap/$n/*
-done
+# for n in $(seq -f '%04.0f' 100 100 2000); do
+# 	python scripts/draw_webcola.py --dest data/drawing/webcola/overlap/$n --overlap-removal data/graph/overlap/$n/*
+# done
 
 # for method in sgd webcola
 # do
@@ -25,7 +25,11 @@ done
 #   done
 # done
 
-for type in overlap; do
-	python scripts/calc_stress.py data/graph/$type.csv result/stress/$type-0100-2000.csv
-	python scripts/create_boxplot.py result/stress/$type-0100-2000.csv result/stress/$type-0100-2000.png
-done
+# for type in overlap; do
+# 	python scripts/calc_stress.py data/graph/$type.csv result/stress/$type-0100-2000.csv
+# 	python scripts/create_boxplot.py result/stress/$type-0100-2000.csv result/stress/$type-0100-2000.png
+# done
+
+bash ./shell_scripts/run_experiment.sh "watts_strogatz/neighbor_2/rewire_030/gap" 100 2000 100 "constraint"
+bash ./shell_scripts/run_experiment.sh "watts_strogatz/neighbor_2/rewire_030/layered" 100 2000 100 "constraint"
+bash ./shell_scripts/run_experiment.sh "watts_strogatz/neighbor_2/rewire_030/overlap/rect100" 100 2000 100 "overlap"
