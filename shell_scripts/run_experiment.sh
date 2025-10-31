@@ -81,7 +81,7 @@ process_method() {
 
 		# 各グラフに対して10回実行（GNU Parallelで並列化）
 		for i in $(seq -w 0 19); do
-			echo "    サブグラフ: $i"
+			echo "$method_name ノード数: $n サブグラフ: $i"
 
 			# GNU Parallelで3回の実行を並列処理
 			seq 0 9 | parallel --bar -j 10 "
@@ -141,7 +141,7 @@ analyze_results() {
 		"$STRESS_DIR/$result_prefix.csv" \
 		"$STRESS_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".png \
 		--methods "${methods[0]}" "${methods[1]}" \
-		--ylabel "normalized stress" \
+		--ylabel "SNS (Scale Normalized Stress)" \
 		--xlabel "node size"
 
 	# Violation（制約違反）の計算と可視化
