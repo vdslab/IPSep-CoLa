@@ -125,9 +125,8 @@ process_method() {
 	done
 }
 
-# analyze_results関数のみ、VIOLATION_TYPEを引数で受け取るように変更
-analyze_results() {
-	log_info "結果を分析中..."
+calculation() {
+	log_info "結果を計算中..."
 	local methods=("$@")
 	local result_prefix="$TYPE-$START-$END"
 
@@ -137,19 +136,25 @@ analyze_results() {
 		"$STRESS_DIR/$result_prefix.csv" \
 		--methods "${methods[@]}"
 
-	python scripts/create_boxplot.py \
-		"$STRESS_DIR/$result_prefix.csv" \
-		"$STRESS_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".png \
-		--methods "${methods[0]}" "${methods[1]}" \
-		--ylabel "SNS (Scale Normalized Stress)" \
-		--xlabel "node size"
-
 	# Violation（制約違反）の計算と可視化
 	python scripts/calc_violation.py \
 		"$OUTPUT_CSV" \
 		"$VIOLATION_DIR/$result_prefix.csv" \
 		--methods "${methods[@]}" \
 		--violations "$VIOLATION_TYPE" # ここを変更
+}
+
+box_plot() {
+	log_info "結果を描画中..."
+	local methods=("$@")
+	local result_prefix="$TYPE-$START-$END"
+
+	python scripts/create_boxplot.py \
+		"$STRESS_DIR/$result_prefix.csv" \
+		"$STRESS_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".png \
+		--methods "${methods[0]}" "${methods[1]}" \
+		--ylabel "SNS (Scale Normalized Stress)" \
+		--xlabel "node size"
 
 	python scripts/create_boxplot.py \
 		"$VIOLATION_DIR/$result_prefix.csv" \
@@ -158,6 +163,7 @@ analyze_results() {
 		--ylabel "average violation" \
 		--xlabel "node size"
 }
+
 # -----------------------------------------------------------------------------
 # メイン処理
 # -----------------------------------------------------------------------------
@@ -170,7 +176,14 @@ main() {
 		process_method "$method"
 	done
 
-	analyze_results "${all_methods[@]}"
+	local all_methods=("$WEBCOLA" "$SGD" "$UNICON")
+	calculation "${all_methods[@]}"
+
+	local methods=("$WEBCOLA" "$SGD")
+	box_plot "${methods[@]}"
+
+	local methods=("$UNICON" "$SGD")
+	box_plot "${methods[@]}"
 
 	log_info "すべての処理が完了しました。"
 }
