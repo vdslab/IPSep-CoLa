@@ -66,13 +66,11 @@ process_method() {
 
 	# VIOLATION_TYPEに基づいてフラグを設定
 	if [ "$VIOLATION_TYPE" = "overlap" ]; then
-		SGD_OVERLAP_FLAG="--overlap-removal"
-		WEBCOLA_OVERLAP_FLAG="--overlapRemoval"
-		UNICON_OVERLAP_FLAG="--overlap-removal"
+		OVERLAP_FLAG="--overlap-removal"        # 共通フラグ（WebCoLa以外）
+		WEBCOLA_OVERLAP_FLAG="--overlapRemoval" # WebCoLa専用フラグ
 	else
-		SGD_OVERLAP_FLAG=""
+		OVERLAP_FLAG=""
 		WEBCOLA_OVERLAP_FLAG=""
-		UNICON_OVERLAP_FLAG=""
 	fi
 
 	for n in $(seq -f "%04g" $START $STEP $END); do
@@ -92,7 +90,7 @@ process_method() {
 						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
 						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
 						--output-suffix '_run_{}' \
-						$SGD_OVERLAP_FLAG
+						$OVERLAP_FLAG
 					;;
 				'$WEBCOLA')
 					node js/src/draw_webcola.js \
@@ -105,7 +103,7 @@ process_method() {
 						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
 						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
 						--output-suffix '_run_{}' \
-						$UNICON_OVERLAP_FLAG
+						$OVERLAP_FLAG
 					;;
 				*)
 					echo 'エラー: 未知の手法です - $method_name' >&2
