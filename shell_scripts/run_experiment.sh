@@ -32,6 +32,8 @@ OUTPUT_CSV="$GRAPH_DIR"/"$TYPE_FILE".csv
 SGD="FullSGD(ours)"
 WEBCOLA="WebCoLa"
 UNICON="UNICON"
+INLINE="Inline Projection"
+POSTPROCESS="Post-processing Projection"
 
 # -----------------------------------------------------------------------------
 # 関数定義
@@ -100,6 +102,21 @@ process_method() {
 					;;
 				'$UNICON')
 					python scripts/draw_unicon.py \
+						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
+						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
+						--output-suffix '_run_{}' \
+						$OVERLAP_FLAG
+					;;
+				'$INLINE')
+					python scripts/draw.py \
+						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
+						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
+						--output-suffix '_run_{}' \
+						$OVERLAP_FLAG
+					;;
+				'$POSTPROCESS')
+					python scripts/draw.py \
+						--space 'after_project' \
 						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
 						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
 						--output-suffix '_run_{}' \
