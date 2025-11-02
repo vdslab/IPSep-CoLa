@@ -203,5 +203,16 @@ main() {
 	log_info "すべての処理が完了しました。"
 }
 
+sub() {
+	local all_methods=("$POSTPROCESS" "$INLINE")
+	for method in "${all_methods[@]}"; do
+		process_method "$method"
+	done
+
+	calculation "${all_methods[@]}"
+	box_plot "${all_methods[@]}"
+}
+
 # スクリプトの実行開始
-main
+# main
+sub
