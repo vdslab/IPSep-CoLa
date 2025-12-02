@@ -25,6 +25,7 @@ DRAWING_DIR="data/drawing"
 STRESS_DIR="result/stress"
 VIOLATION_DIR="result/violation"
 PLOT_DIR="result/plot"
+RATIO_DIR="result/ratio"
 TYPE_FILE=$(echo "$TYPE" | tr '/' '_')
 OUTPUT_CSV="$GRAPH_DIR"/"$TYPE_FILE".csv
 
@@ -168,7 +169,7 @@ box_plot() {
 		"$STRESS_DIR/$result_prefix.csv" \
 		"$STRESS_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".png \
 		--methods "${methods[0]}" "${methods[1]}" \
-		--ylabel "SNS (Scale Normalized Stress)" \
+		--ylabel "Normalized Stress (NS)" \
 		--xlabel "node size"
 
 	python scripts/create_boxplot.py \
@@ -179,40 +180,41 @@ box_plot() {
 		--xlabel "node size"
 }
 
+calc_ratio() {
+	local methods=("$@")
+	local result_prefix="$TYPE-$START-$END"
+
+	python scripts/compare_stress_ratio.py \
+		"$STRESS_DIR/$result_prefix.csv" \
+		"$RATIO_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}"_ratio.csv \
+		--methods "${methods[0]}" "${methods[1]}"
+}
+
+# 2つの手法を比較する処理（box_plotとratio計算）
+process_comparison() {
+	local methods=("$@")
+	box_plot "${methods[@]}"
+	calc_ratio "${methods[@]}"
+}
+
 # -----------------------------------------------------------------------------
 # メイン処理
 # -----------------------------------------------------------------------------
 main() {
-	local all_methods=("$WEBCOLA" "$SGD" "$UNICON")
+	local all_methods=("$WEBCOLA" "$SGD" "$UNICON" "$POSTPROCESS" "$INLINE")
 
-	generate_graph_list
+	# for method in "${all_methods[@]}"; do
+	# 	process_method "$method"
+	# done
 
-	for method in "${all_methods[@]}"; do
-		process_method "$method"
-	done
-
-	local all_methods=("$WEBCOLA" "$SGD" "$UNICON")
 	calculation "${all_methods[@]}"
 
-	local methods=("$WEBCOLA" "$SGD")
-	box_plot "${methods[@]}"
-
-	local methods=("$UNICON" "$SGD")
-	box_plot "${methods[@]}"
+	process_comparison "$WEBCOLA" "$SGD"
+	process_comparison "$UNICON" "$SGD"
+	process_comparison "$INLINE" "$POSTPROCESS"
 
 	log_info "すべての処理が完了しました。"
 }
 
-sub() {
-	local all_methods=("$POSTPROCESS" "$INLINE")
-	for method in "${all_methods[@]}"; do
-		process_method "$method"
-	done
-
-	calculation "${all_methods[@]}"
-	box_plot "${all_methods[@]}"
-}
-
-# スクリプトの実行開始
-# main
-sub
+generate_graph_list
+main
