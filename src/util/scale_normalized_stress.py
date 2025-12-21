@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 from networkx.readwrite import json_graph
 
-from src.util.normalized_stress import (
+from .normalized_stress import (
     _pairwise_euclidean,
     _upper_triangle_vector,
     normalized_stress,

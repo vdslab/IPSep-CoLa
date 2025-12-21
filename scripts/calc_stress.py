@@ -9,6 +9,7 @@ import networkx as nx
 import numpy as np
 
 from util.normalized_stress import _pairwise_euclidean, normalized_stress
+from util.scale_normalized_stress import scale_normalized_stress
 
 # from util.scale_normalized_stress import scale_normalized_stress
 
@@ -26,10 +27,10 @@ def calculate_stress_for_run(args):
     D_low = _pairwise_euclidean(P_low)
 
     # SNS と α* を計算
-    # sns, alpha_star = scale_normalized_stress(D_high, D_low)
-    ns = normalized_stress(D_high, D_low)
+    sns, alpha_star = scale_normalized_stress(D_high, D_low)
+    # ns = normalized_stress(D_high, D_low)
 
-    return ns, 1.0  # ダミーでα*=1.0を返す
+    return sns, alpha_star  # α* を返す
 
 
 def main():
