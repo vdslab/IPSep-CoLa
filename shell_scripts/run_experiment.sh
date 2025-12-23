@@ -19,15 +19,16 @@ END="$3"
 STEP="$4"
 VIOLATION_TYPE="$5"
 
+EVALUATION="SNS"
 # 各種ディレクトリのパスを設定します。
 GRAPH_DIR="data/graph"
 DRAWING_DIR="data/drawing"
-STRESS_DIR="result/stress"
-VIOLATION_DIR="result/violation"
+STRESS_DIR="result/stress/$EVALUATION"
+VIOLATION_DIR="result/violation/$EVALUATION"
 PLOT_DIR="result/plot"
-RATIO_DIR="result/ratio"
+RATIO_DIR="result/ratio/$EVALUATION"
 TYPE_FILE=$(echo "$TYPE" | tr '/' '_')
-OUTPUT_CSV="$GRAPH_DIR"/"$TYPE_FILE".csv
+OUTPUT_CSV="$GRAPH_DIR"/"$TYPE_FILE"_"$EVALUATION".csv
 
 # 評価する手法名を定義します。
 SGD="FullSGD(ours)"
@@ -136,7 +137,7 @@ process_method() {
 			python scripts/plot.py \
 				'$GRAPH_DIR/$TYPE/$n/node_n=${n}_{}.json' \
 				'$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_{}_run_0.json' \
-				'$PLOT_DIR/$method_name/$TYPE/$n/node_n=${n}_{}.png'
+				'$PLOT_DIR/$method_name/$TYPE/$n/node_n=${n}_{}_run_0.png'
 		"
 	done
 }
@@ -167,17 +168,17 @@ box_plot() {
 
 	python scripts/create_boxplot.py \
 		"$STRESS_DIR/$result_prefix.csv" \
-		"$STRESS_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".png \
+		"$STRESS_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".pdf \
 		--methods "${methods[0]}" "${methods[1]}" \
-		--ylabel "Normalized Stress (NS)" \
-		--xlabel "node size"
+		--ylabel "$EVALUATION" \
+		--xlabel "Number of Nodes"
 
 	python scripts/create_boxplot.py \
 		"$VIOLATION_DIR/$result_prefix.csv" \
-		"$VIOLATION_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".png \
+		"$VIOLATION_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".pdf \
 		--methods "${methods[0]}" "${methods[1]}" \
 		--ylabel "average violation" \
-		--xlabel "node size"
+		--xlabel "Number of Nodes"
 }
 
 calc_ratio() {
@@ -190,11 +191,23 @@ calc_ratio() {
 		--methods "${methods[0]}" "${methods[1]}"
 }
 
+ratio_box_plot() {
+	local methods=("$@")
+	local result_prefix="$TYPE-$START-$END"
+
+	python scripts/ratio_boxplot.py \
+		"$RATIO_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}"_ratio.csv \
+		"$RATIO_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}"_ratio.pdf \
+		--xlabel "Number of Nodes"
+}
+
 # 2つの手法を比較する処理（box_plotとratio計算）
 process_comparison() {
 	local methods=("$@")
 	box_plot "${methods[@]}"
+
 	calc_ratio "${methods[@]}"
+	ratio_box_plot "${methods[@]}"
 }
 
 # -----------------------------------------------------------------------------
@@ -203,9 +216,9 @@ process_comparison() {
 main() {
 	local all_methods=("$WEBCOLA" "$SGD" "$UNICON" "$POSTPROCESS" "$INLINE")
 
-	# for method in "${all_methods[@]}"; do
-	# 	process_method "$method"
-	# done
+	for method in "${all_methods[@]}"; do
+		process_method "$method"
+	done
 
 	calculation "${all_methods[@]}"
 
