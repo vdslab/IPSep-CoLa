@@ -118,8 +118,14 @@
 
 **Shell Scripts** (All in `shell_scripts/`)
 
-- ✅ `run_experiment.sh`: Main experiment runner
-- ✅ `runall.sh`: Run all experiments
+- ✅ `run_experiment.sh`: Main experiment runner (refactored December 23, 2025)
+  - Modular library-based architecture
+  - Enhanced interface with optional EVALUATION parameter
+  - Comprehensive documentation and help messages
+- ✅ `runall.sh`: Run all experiments (updated December 23, 2025)
+  - Adapted to new run_experiment.sh interface
+  - All three experiment types enabled
+  - Progress messages and documentation
 - ✅ `draw_experience.sh`: Drawing automation
 - ✅ `plot_experience.sh`: Plotting automation
 - ✅ Constraint-specific scripts:
@@ -127,6 +133,33 @@
   - `layer_gap.sh`
   - `overlap.sh`
   - `overlap_rect.sh`
+
+**Shell Script Libraries** (`shell_scripts/lib/`) - December 23, 2025
+
+- ✅ `config.sh`: Configuration and constants management
+  - Centralized result_prefix generation
+  - Directory path management with EVALUATION support
+  - Method and comparison pair definitions
+- ✅ `utils.sh`: Utility functions
+  - Logging (log_info, log_error)
+  - Graph list generation
+  - Constraint flag setup
+  - Directory creation helpers
+- ✅ `drawing.sh`: Graph drawing and plotting
+  - Separated drawing and plotting responsibilities
+  - Individual method execution functions
+  - Parallel processing encapsulation
+- ✅ `calculation.sh`: Stress and violation calculations
+  - Centralized calculation logic
+  - Ratio computation functions
+- ✅ `visualization.sh`: Box plot generation
+  - DRY principle implementation
+  - Shared box plot creation function
+  - Comparison processing workflow
+- ✅ `README.md`: Library documentation
+  - Usage guide and design principles
+  - Customization instructions
+  - API reference
 
 **Parallel Execution**
 
@@ -340,11 +373,13 @@
 **Change**: Adopted Scale-normalized Stress (SNS) terminology
 
 **Timeline**:
+
 - Initial: Used "Normalized Stress" terminology
 - December 2025: Switched to "Scale-normalized Stress" to align with research literature
 - Refactored: Extracted SNS calculation into separate reusable function
 
 **Impact**:
+
 - Improved consistency with published research
 - Easier comparison with other studies
 - Clearer communication of methodology
@@ -354,6 +389,7 @@
 **Addition**: Stress reduction rate analysis tools
 
 **Components**:
+
 1. `scripts/compare_stress_ratio.py`: Calculates reduction metrics
    - Takes two methods (baseline and proposed)
    - Computes reduction rate: `(baseline - proposed) / baseline`
@@ -373,6 +409,7 @@
 **Change**: Separated layout computation from rendering
 
 **Rationale**:
+
 - Independent optimization of each stage
 - Easier debugging and troubleshooting
 - Partial re-runs without full recomputation
@@ -387,6 +424,7 @@
 **Focus**: Understanding impact of constraint application sequence
 
 **Motivation**:
+
 - Different projection orders may yield different results
 - Optimization opportunities in constraint handling
 - Trade-offs between different constraint priorities

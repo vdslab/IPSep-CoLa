@@ -7,13 +7,49 @@
 The project is in the analysis phase, focusing on comparing layout algorithms and evaluating stress reduction performance between different methods (primarily WebCoLa vs FullSGD/proposed method).
 
 **Current Activities**:
+
 - Stress reduction rate analysis
 - Multi-metric comparative visualization (reduction rate, absolute reduction, final stress values)
 - Scale-normalized Stress (SNS) metric implementation
 
 ## Recent Changes
 
-### December 2025: Stress Comparison and Reduction Analysis
+### December 23, 2025: Shell Script Refactoring and Reorganization
+
+**Major Updates**:
+
+1. **EVALUATION Results Directory Structure** (December 23, 2025)
+   - Changed result storage from file-based to directory-based organization
+   - Structure: `result/stress/$EVALUATION/`, `result/violation/$EVALUATION/`, `result/ratio/$EVALUATION/`
+   - Allows easy separation of different evaluation metrics (SNS, Stress, etc.)
+   - File names simplified by removing EVALUATION suffix (handled by directory)
+
+2. **Shell Script Library Refactoring** (December 23, 2025)
+   - Created modular library structure in `shell_scripts/lib/`:
+     - `config.sh` - Configuration and constants management
+     - `utils.sh` - Utility functions (logging, directory creation, etc.)
+     - `drawing.sh` - Graph drawing and plotting (responsibility separation)
+     - `calculation.sh` - Stress and violation calculations
+     - `visualization.sh` - Box plot generation (DRY principle)
+   - Main script reduced from ~230 lines to ~100 lines
+   - Implemented DRY principle: eliminated duplicate Box plot code
+   - Centralized `result_prefix` generation in config.sh
+   - Each library file is independently reusable
+   - Comprehensive documentation added to all functions
+
+3. **Enhanced run_experiment.sh Interface**
+   - Added optional 6th parameter for EVALUATION metric (default: "SNS")
+   - Usage: `./run_experiment.sh TYPE START END STEP VIOLATION_TYPE [EVALUATION]`
+   - Improved help message with clear examples
+   - Better error handling and validation
+
+4. **Updated runall.sh**
+   - Adapted to new run_experiment.sh interface
+   - Explicitly specifies EVALUATION parameter
+   - Enabled all three experiment types (gap, layered, overlap)
+   - Added descriptive comments and progress messages
+
+### December 2025: Stress Comparison and Reduction Analysis (Earlier)
 
 **Major Updates**:
 
