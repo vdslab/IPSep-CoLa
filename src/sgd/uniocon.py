@@ -33,9 +33,9 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         for j, v in enumerate(nx_graph.nodes):
             dist.set(indices[u], indices[v], dist_list[j][i])
 
-    drawing = eg.ClassicalMds.new_with_distance_matrix(dist).run_2d()
+    # drawing = eg.ClassicalMds.new_with_distance_matrix(dist).run_2d()
     drawing = eg.DrawingEuclidean2d.initial_placement(eggraph)
-    sgd = eg.FullSgd.new_with_distance_matrix(dist)
+    sgd = eg.FullSgd().build_with_distance_matrix(dist)
     rng = eg.Rng.seed_from(parameter.seed)
 
     size = []
