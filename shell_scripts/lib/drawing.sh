@@ -104,6 +104,69 @@ run_postprocess() {
 # グラフ描画処理
 # -----------------------------------------------------------------------------
 
+# 1つのグラフ描画実行を処理する関数
+# 引数:
+#   $1: n - ノード数
+#   $2: i - グラフ番号
+#   $3: run_id - 実行ID
+# 環境変数から取得:
+#   METHOD_NAME, GRAPH_DIR_EXPORT, DRAWING_DIR_EXPORT, TYPE_EXPORT
+#   OVERLAP_FLAG_EXPORT, WEBCOLA_OVERLAP_FLAG_EXPORT
+#   SGD_EXPORT, WEBCOLA_EXPORT, UNICON_EXPORT, INLINE_EXPORT, POSTPROCESS_EXPORT
+process_single_run() {
+    local n=$1
+    local i=$2
+    local run_id=$3
+    
+    # 環境変数から値を取得
+    local method_name="$METHOD_NAME"
+    local graph_dir="$GRAPH_DIR_EXPORT"
+    local drawing_dir="$DRAWING_DIR_EXPORT"
+    local type="$TYPE_EXPORT"
+    local overlap_flag="$OVERLAP_FLAG_EXPORT"
+    local webcola_overlap_flag="$WEBCOLA_OVERLAP_FLAG_EXPORT"
+    local sgd="$SGD_EXPORT"
+    local webcola="$WEBCOLA_EXPORT"
+    local unicon="$UNICON_EXPORT"
+    local inline="$INLINE_EXPORT"
+    local postprocess="$POSTPROCESS_EXPORT"
+    
+    local PAUSE_FLAG="/tmp/draw.pause"
+    
+    # PAUSE_FLAGのチェック
+    while [ -f "$PAUSE_FLAG" ]; do sleep 1; done
+    
+    local graph_file="$graph_dir/$type/$n/node_n=${n}_$i.json"
+    local output_dir="$drawing_dir/$method_name/$type/$n"
+    
+    # ディレクトリ作成
+    mkdir -p "$output_dir"
+    
+    # 手法に応じた処理
+    case "$method_name" in
+        "$sgd")
+            run_fullsgd "$graph_file" "$output_dir" "$run_id" "$overlap_flag"
+            ;;
+        "$webcola")
+            local output_file="$output_dir/node_n=${n}_${i}_run_${run_id}.json"
+            run_webcola "$graph_file" "$output_file" "$webcola_overlap_flag"
+            ;;
+        "$unicon")
+            run_unicon "$graph_file" "$output_dir" "$run_id" "$overlap_flag"
+            ;;
+        "$inline")
+            run_inline "$graph_file" "$output_dir" "$run_id" "$overlap_flag"
+            ;;
+        "$postprocess")
+            run_postprocess "$graph_file" "$output_dir" "$run_id" "$overlap_flag"
+            ;;
+        *)
+            echo "エラー: 未知の手法です - $method_name" >&2
+            exit 1
+            ;;
+    esac
+}
+
 # 指定された手法でグラフを描画します。
 # 引数:
 #   $1: method_name - 手法名
@@ -111,54 +174,35 @@ run_postprocess() {
 #   $GRAPH_DIR, $DRAWING_DIR, $TYPE, $START, $STEP, $END
 #   $OVERLAP_FLAG, $WEBCOLA_OVERLAP_FLAG
 #   $SGD, $WEBCOLA, $UNICON, $INLINE, $POSTPROCESS
+#   $PARALLEL_JOBS - 並列ジョブ数
 draw_graphs() {
     local method_name="$1"
-    local PAUSE_FLAG="/tmp/draw.pause"
     
-    for n in $(seq -f "%04g" "$START" "$STEP" "$END"); do
-        echo "  ノード数: $n"
-        local output_dir="$DRAWING_DIR/$method_name/$TYPE/$n"
-        ensure_directory "$output_dir"
-        
-        # 各グラフに対して処理
-        for i in $(seq -w 0 19); do
-            echo "$method_name ノード数: $n サブグラフ: $i"
-            local graph_file="$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json"
-            
-            # GNU Parallelで10回の実行を並列処理
-            seq 0 9 | parallel --bar -j 10 "
-                while [ -f '$PAUSE_FLAG' ]; do sleep 1; done
-                
-                case '$method_name' in
-                '$SGD')
-                    $(declare -f run_fullsgd)
-                    run_fullsgd '$graph_file' '$output_dir' {} '$OVERLAP_FLAG'
-                    ;;
-                '$WEBCOLA')
-                    $(declare -f run_webcola)
-                    local output_file='$output_dir/node_n=${n}_${i}_run_{}.json'
-                    run_webcola '$graph_file' \"\$output_file\" '$WEBCOLA_OVERLAP_FLAG'
-                    ;;
-                '$UNICON')
-                    $(declare -f run_unicon)
-                    run_unicon '$graph_file' '$output_dir' {} '$OVERLAP_FLAG'
-                    ;;
-                '$INLINE')
-                    $(declare -f run_inline)
-                    run_inline '$graph_file' '$output_dir' {} '$OVERLAP_FLAG'
-                    ;;
-                '$POSTPROCESS')
-                    $(declare -f run_postprocess)
-                    run_postprocess '$graph_file' '$output_dir' {} '$OVERLAP_FLAG'
-                    ;;
-                *)
-                    echo 'エラー: 未知の手法です - $method_name' >&2
-                    exit 1
-                    ;;
-                esac
-            "
-        done
-    done
+    # 関数をエクスポート（parallelで使用するため）
+    export -f process_single_run
+    export -f run_fullsgd run_webcola run_unicon run_inline run_postprocess
+    
+    # 複雑な変数（スペースや括弧を含む）を環境変数としてエクスポート
+    export METHOD_NAME="$method_name"
+    export GRAPH_DIR_EXPORT="$GRAPH_DIR"
+    export DRAWING_DIR_EXPORT="$DRAWING_DIR"
+    export TYPE_EXPORT="$TYPE"
+    export OVERLAP_FLAG_EXPORT="$OVERLAP_FLAG"
+    export WEBCOLA_OVERLAP_FLAG_EXPORT="$WEBCOLA_OVERLAP_FLAG"
+    export SGD_EXPORT="$SGD"
+    export WEBCOLA_EXPORT="$WEBCOLA"
+    export UNICON_EXPORT="$UNICON"
+    export INLINE_EXPORT="$INLINE"
+    export POSTPROCESS_EXPORT="$POSTPROCESS"
+    
+    echo "  並列処理中: $method_name (並列度: $PARALLEL_JOBS)"
+    
+    # 全組み合わせを1回のparallelで処理（環境変数を使用）
+    parallel --bar --line-buffer -j "$PARALLEL_JOBS" \
+        process_single_run {1} {2} {3} \
+        ::: $(seq -f "%04g" "$START" "$STEP" "$END") \
+        ::: $(seq -w 0 19) \
+        ::: $(seq 0 9)
 }
 
 # -----------------------------------------------------------------------------
@@ -169,19 +213,21 @@ draw_graphs() {
 # 引数:
 #   $1: method_name - 手法名
 # グローバル変数の使用:
-#   $GRAPH_DIR, $DRAWING_DIR, $PLOT_DIR, $TYPE, $START, $STEP, $END
+#   $GRAPH_DIR, $DRAWING_DIR, $PLOT_DIR, $TYPE, $START, $STEP, $END, $PARALLEL_PLOTS
 plot_results() {
     local method_name="$1"
     
-    for n in $(seq -f "%04g" "$START" "$STEP" "$END"); do
-        # GNU Parallelで並列化（サンプル0, 5, 10, 15のみプロット）
-        seq -w 0 5 19 | parallel -j 4 "
+    # ノード数とグラフ番号の組み合わせを並列化
+    seq -f "%04g" "$START" "$STEP" "$END" | parallel --line-buffer -j "$PARALLEL_PLOTS" "
+        n={}
+        # サンプル0, 5, 10, 15のみプロット
+        for i in 00 05 10 15; do
             python scripts/plot.py \
-                '$GRAPH_DIR/$TYPE/$n/node_n=${n}_{}.json' \
-                '$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_{}_run_0.json' \
-                '$PLOT_DIR/$method_name/$TYPE/$n/node_n=${n}_{}_run_0.png'
-        "
-    done
+                \"$GRAPH_DIR/$TYPE/\$n/node_n=\${n}_\${i}.json\" \
+                \"$DRAWING_DIR/$method_name/$TYPE/\$n/node_n=\${n}_\${i}_run_0.json\" \
+                \"$PLOT_DIR/$method_name/$TYPE/\$n/node_n=\${n}_\${i}_run_0.png\"
+        done
+    "
 }
 
 # -----------------------------------------------------------------------------

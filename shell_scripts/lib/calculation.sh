@@ -23,12 +23,18 @@ calculation() {
         "$STRESS_DIR/$result_prefix.csv" \
         --methods "${methods[@]}"
     
+    # VIOLATION_TYPEをcalc_violation.pyが受け付ける形式に変換
+    local violation_arg="$VIOLATION_TYPE"
+    if [ "$VIOLATION_TYPE" = "gap" ]; then
+        violation_arg="constraint"
+    fi
+    
     # 制約違反（Violation）の計算
     python scripts/calc_violation.py \
         "$OUTPUT_CSV" \
         "$VIOLATION_DIR/$result_prefix.csv" \
         --methods "${methods[@]}" \
-        --violations "$VIOLATION_TYPE"
+        --violations "$violation_arg"
     
     log_info "計算が完了しました"
 }
