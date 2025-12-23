@@ -1,233 +1,104 @@
 #!/bin/bash
+# =============================================================================
+# run_experiment.sh - グラフレイアウト実験のメインスクリプト
+# =============================================================================
+#
+# 使用方法:
+#   ./run_experiment.sh TYPE START END STEP VIOLATION_TYPE [EVALUATION]
+#
+# 引数:
+#   TYPE            - 実験タイプ (例: "layer_fix_rel", "overlap")
+#   START           - 開始ノード数 (例: 100)
+#   END             - 終了ノード数 (例: 2000)
+#   STEP            - ステップ数 (例: 100)
+#   VIOLATION_TYPE  - 制約違反タイプ (例: "gap", "overlap")
+#   EVALUATION      - 評価メトリクス (オプション、デフォルト: "SNS")
+#
+# 例:
+#   ./run_experiment.sh layer_fix_rel 100 2000 100 gap
+#   ./run_experiment.sh overlap 100 500 100 overlap SNS
+#
+# =============================================================================
+
 cd "$(dirname "$0")/.." || exit
+
+# -----------------------------------------------------------------------------
+# ライブラリの読み込み
+# -----------------------------------------------------------------------------
+
+SCRIPT_DIR="$(dirname "$0")"
+LIB_DIR="$SCRIPT_DIR/lib"
+
+# 各ライブラリファイルを読み込む
+source "$LIB_DIR/config.sh"
+source "$LIB_DIR/utils.sh"
+source "$LIB_DIR/drawing.sh"
+source "$LIB_DIR/calculation.sh"
+source "$LIB_DIR/visualization.sh"
 
 # -----------------------------------------------------------------------------
 # 引数チェック
 # -----------------------------------------------------------------------------
-if [ "$#" -ne 5 ]; then
-	echo "Usage: $0 TYPE START END STEP VIOLATION_TYPE"
-	exit 1
+
+if [ "$#" -lt 5 ] || [ "$#" -gt 6 ]; then
+    echo "Usage: $0 TYPE START END STEP VIOLATION_TYPE [EVALUATION]"
+    echo ""
+    echo "Arguments:"
+    echo "  TYPE            実験タイプ (例: layer_fix_rel, overlap)"
+    echo "  START           開始ノード数 (例: 100)"
+    echo "  END             終了ノード数 (例: 2000)"
+    echo "  STEP            ステップ数 (例: 100)"
+    echo "  VIOLATION_TYPE  制約違反タイプ (例: gap, overlap)"
+    echo "  EVALUATION      評価メトリクス (オプション、デフォルト: SNS)"
+    echo ""
+    echo "Example:"
+    echo "  $0 layer_fix_rel 100 2000 100 gap"
+    echo "  $0 overlap 100 500 100 overlap SNS"
+    exit 1
 fi
 
 # -----------------------------------------------------------------------------
-# 設定セクション
-# -----------------------------------------------------------------------------
-# 引数から実験の種類や対象のノード数を設定します。
-TYPE="$1"
-START="$2"
-END="$3"
-STEP="$4"
-VIOLATION_TYPE="$5"
-
-EVALUATION="SNS"
-# 各種ディレクトリのパスを設定します。
-GRAPH_DIR="data/graph"
-DRAWING_DIR="data/drawing"
-STRESS_DIR="result/stress/$EVALUATION"
-VIOLATION_DIR="result/violation/$EVALUATION"
-PLOT_DIR="result/plot"
-RATIO_DIR="result/ratio/$EVALUATION"
-TYPE_FILE=$(echo "$TYPE" | tr '/' '_')
-OUTPUT_CSV="$GRAPH_DIR"/"$TYPE_FILE"_"$EVALUATION".csv
-
-# 評価する手法名を定義します。
-SGD="FullSGD(ours)"
-WEBCOLA="WebCoLa"
-UNICON="UNICON"
-INLINE="Inline Projection"
-POSTPROCESS="Post-processing Projection"
-
-# -----------------------------------------------------------------------------
-# 関数定義
+# 設定の初期化
 # -----------------------------------------------------------------------------
 
-# 処理の開始時にメッセージを表示します。
-# $1: メッセージ
-log_info() {
-	echo "----------------------------------------"
-	echo "$1"
-	echo "----------------------------------------"
-}
+# 引数から設定を初期化
+init_config "$1" "$2" "$3" "$4" "$5" "${6:-SNS}"
 
-# 実験対象となるグラフのリストをCSVファイルとして生成します。
-generate_graph_list() {
-	log_info "グラフリストを ${OUTPUT_CSV} に生成中..."
+# 制約フラグの設定
+setup_constraint_flags "$VIOLATION_TYPE"
 
-	echo "name,type,n,path" >"$OUTPUT_CSV"
-	for n in $(seq -f "%04g" $START $STEP $END); do
-		for i in $(seq -w 0 19); do
-			echo "node_n=${n}_$i.json,$TYPE,$n,$TYPE/$n/node_n=${n}_$i.json" >>"$OUTPUT_CSV"
-		done
-	done
-}
-
-# 指定された手法でグラフを描画し、結果をプロットします。
-# $1: 手法名 (例: "FullSGD(ours)", "WebCoLa", "UNICON")
-process_method() {
-	local method_name="$1"
-	log_info "処理中: $method_name"
-	PAUSE_FLAG="/tmp/draw.pause"
-
-	# VIOLATION_TYPEに基づいてフラグを設定
-	if [ "$VIOLATION_TYPE" = "overlap" ]; then
-		OVERLAP_FLAG="--overlap-removal"        # 共通フラグ（WebCoLa以外）
-		WEBCOLA_OVERLAP_FLAG="--overlapRemoval" # WebCoLa専用フラグ
-	else
-		OVERLAP_FLAG=""
-		WEBCOLA_OVERLAP_FLAG=""
-	fi
-
-	for n in $(seq -f "%04g" $START $STEP $END); do
-		echo "  ノード数: $n"
-		mkdir -p "$DRAWING_DIR/$method_name/$TYPE/$n"
-
-		# 各グラフに対して10回実行（GNU Parallelで並列化）
-		for i in $(seq -w 0 19); do
-			echo "$method_name ノード数: $n サブグラフ: $i"
-
-			# GNU Parallelで3回の実行を並列処理
-			seq 0 9 | parallel --bar -j 10 "
-				while [ -f '$PAUSE_FLAG' ]; do sleep 1; done
-				case '$method_name' in
-				'$SGD')
-					python scripts/draw.py --space euclidean \
-						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
-						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
-						--output-suffix '_run_{}' \
-						$OVERLAP_FLAG
-					;;
-				'$WEBCOLA')
-					node js/src/draw_webcola.js \
-						--graphFile '$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
-						--output '$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_${i}_run_{}.json' \
-						$WEBCOLA_OVERLAP_FLAG
-					;;
-				'$UNICON')
-					python scripts/draw_unicon.py \
-						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
-						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
-						--output-suffix '_run_{}' \
-						$OVERLAP_FLAG
-					;;
-				'$INLINE')
-					python scripts/draw.py \
-						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
-						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
-						--output-suffix '_run_{}' \
-						$OVERLAP_FLAG
-					;;
-				'$POSTPROCESS')
-					python scripts/draw.py \
-						--space 'after_project' \
-						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
-						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
-						--output-suffix '_run_{}' \
-						$OVERLAP_FLAG
-					;;
-				*)
-					echo 'エラー: 未知の手法です - $method_name' >&2
-					exit 1
-					;;
-				esac
-			"
-		done
-
-		# 描画結果をプロット (最初の実行結果 run_0 を使用、GNU Parallelで並列化)
-		seq -w 0 5 19 | parallel -j 4 "
-			python scripts/plot.py \
-				'$GRAPH_DIR/$TYPE/$n/node_n=${n}_{}.json' \
-				'$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_{}_run_0.json' \
-				'$PLOT_DIR/$method_name/$TYPE/$n/node_n=${n}_{}_run_0.png'
-		"
-	done
-}
-
-calculation() {
-	log_info "結果を計算中..."
-	local methods=("$@")
-	local result_prefix="$TYPE-$START-$END"
-
-	# Stress（ストレス）の計算と可視化
-	python scripts/calc_stress.py \
-		"$OUTPUT_CSV" \
-		"$STRESS_DIR/$result_prefix.csv" \
-		--methods "${methods[@]}"
-
-	# Violation（制約違反）の計算と可視化
-	python scripts/calc_violation.py \
-		"$OUTPUT_CSV" \
-		"$VIOLATION_DIR/$result_prefix.csv" \
-		--methods "${methods[@]}" \
-		--violations "$VIOLATION_TYPE" # ここを変更
-}
-
-box_plot() {
-	log_info "結果を描画中..."
-	local methods=("$@")
-	local result_prefix="$TYPE-$START-$END"
-
-	python scripts/create_boxplot.py \
-		"$STRESS_DIR/$result_prefix.csv" \
-		"$STRESS_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".pdf \
-		--methods "${methods[0]}" "${methods[1]}" \
-		--ylabel "$EVALUATION" \
-		--xlabel "Number of Nodes"
-
-	python scripts/create_boxplot.py \
-		"$VIOLATION_DIR/$result_prefix.csv" \
-		"$VIOLATION_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}".pdf \
-		--methods "${methods[0]}" "${methods[1]}" \
-		--ylabel "average violation" \
-		--xlabel "Number of Nodes"
-}
-
-calc_ratio() {
-	local methods=("$@")
-	local result_prefix="$TYPE-$START-$END"
-
-	python scripts/compare_stress_ratio.py \
-		"$STRESS_DIR/$result_prefix.csv" \
-		"$RATIO_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}"_ratio.csv \
-		--methods "${methods[0]}" "${methods[1]}"
-}
-
-ratio_box_plot() {
-	local methods=("$@")
-	local result_prefix="$TYPE-$START-$END"
-
-	python scripts/ratio_boxplot.py \
-		"$RATIO_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}"_ratio.csv \
-		"$RATIO_DIR"/"$result_prefix"_"${methods[0]}"_"${methods[1]}"_ratio.pdf \
-		--xlabel "Number of Nodes"
-}
-
-# 2つの手法を比較する処理（box_plotとratio計算）
-process_comparison() {
-	local methods=("$@")
-	box_plot "${methods[@]}"
-
-	calc_ratio "${methods[@]}"
-	ratio_box_plot "${methods[@]}"
-}
+log_info "実験設定:"
+echo "  TYPE:           $TYPE"
+echo "  ノード数範囲:    $START - $END (step: $STEP)"
+echo "  VIOLATION_TYPE: $VIOLATION_TYPE"
+echo "  EVALUATION:     $EVALUATION"
+echo "  OUTPUT_CSV:     $OUTPUT_CSV"
 
 # -----------------------------------------------------------------------------
 # メイン処理
 # -----------------------------------------------------------------------------
+
 main() {
-	local all_methods=("$WEBCOLA" "$SGD" "$UNICON" "$POSTPROCESS" "$INLINE")
-
-	for method in "${all_methods[@]}"; do
-		process_method "$method"
-	done
-
-	calculation "${all_methods[@]}"
-
-	process_comparison "$WEBCOLA" "$SGD"
-	process_comparison "$UNICON" "$SGD"
-	process_comparison "$INLINE" "$POSTPROCESS"
-
-	log_info "すべての処理が完了しました。"
+    # グラフリストの生成
+    generate_graph_list
+    
+    # 各手法でグラフを描画
+    for method in "${ALL_METHODS[@]}"; do
+        process_method "$method"
+    done
+    
+    # ストレスと制約違反の計算
+    calculation "${ALL_METHODS[@]}"
+    
+    # 比較ペアの処理
+    log_info "手法比較を実行中..."
+    for pair in "${COMPARISON_PAIRS[@]}"; do
+        IFS=':' read -r method1 method2 <<< "$pair"
+        process_comparison "$method1" "$method2"
+    done
+    
+    log_info "すべての処理が完了しました。"
 }
 
-generate_graph_list
+# メイン処理の実行
 main

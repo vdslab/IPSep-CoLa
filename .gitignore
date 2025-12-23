@@ -304,3 +304,4 @@ dist
 js/public/
 dest/
 !src/data/**.py
+!shell_scripts/lib
