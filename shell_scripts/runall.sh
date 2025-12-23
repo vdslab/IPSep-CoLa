@@ -37,6 +37,16 @@ echo "グラフサイズ: $START - $END (step: $STEP)"
 echo "評価メトリクス: $EVALUATION"
 echo "========================================"
 
+
+# Overlap除去の実験
+echo ""
+echo ">>> Overlap除去の実験を実行中..."
+./shell_scripts/run_experiment.sh \
+    'watts_strogatz/neighbor_2/rewire_030/overlap/rect100' \
+    $START $END $STEP \
+    'overlap' \
+    "$EVALUATION"
+
 # Gap制約の実験
 echo ""
 echo ">>> Gap制約の実験を実行中..."
@@ -55,14 +65,6 @@ echo ">>> Layered制約の実験を実行中..."
     'constraint' \
     "$EVALUATION"
 
-# Overlap除去の実験
-echo ""
-echo ">>> Overlap除去の実験を実行中..."
-./shell_scripts/run_experiment.sh \
-    'watts_strogatz/neighbor_2/rewire_030/overlap/rect100' \
-    $START $END $STEP \
-    'overlap' \
-    "$EVALUATION"
 
 echo ""
 echo "========================================"
