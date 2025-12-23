@@ -1,10 +1,6 @@
 import matplotlib
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import networkx as nx
-import numpy as np
-from matplotlib.colors import ListedColormap, Normalize
 
 
 def plot_graph(
@@ -22,8 +18,6 @@ def plot_graph(
     edge_color = ["black"] * len(G.edges)
     if show_violation:
         constraints = G.graph["constraints"]
-        #   { "axis": "y", "left": 72, "right": 1, "gap": 20 },
-        # gap = constraints[0]["gap"]
         y_violations = {
             tuple(sorted([str(c["right"]), str(c["left"])])): max(
                 0, c["gap"] - (pos[str(c["right"])][1] - pos[str(c["left"])][1])
@@ -32,13 +26,7 @@ def plot_graph(
             for c in constraints
             if c.get("axis", "") == "y"
         }
-        # norm = Normalize(vmin=0, vmax=gap)
-        # original_cmap = cm.get_cmap("Reds")
-        # cmap = mcolors.LinearSegmentedColormap.from_list(
-        #     "truncated_reds", original_cmap(np.linspace(0.2, 1.0, 256))
-        # )
 
-        print(y_violations)
         edge_color = [
             "red" if y_violations.get(tuple(sorted(e)), False) else "gray"
             for e in G.edges
