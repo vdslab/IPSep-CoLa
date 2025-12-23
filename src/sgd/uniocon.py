@@ -80,7 +80,7 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
     )
 
     for i in range(parameter.iter):
-        print_progress_bar(i, parameter.iter)
+        # print_progress_bar(i, parameter.iter)
         sgd_scheduler.step(step)
         if overlap_removal:
             # overlap.apply_with_drawing_euclidean_2d(drawing)
