@@ -119,7 +119,6 @@ def main():
         for row in data:
             graph_filepath = os.path.join(os.path.dirname(args.csv_file), row["path"])
             graph = nx.node_link_graph(json.load(open(graph_filepath)))
-            print("\r", method, graph_filepath)
 
             # 10回の実行結果から違反量を計算（並列実行）
             tasks = []
@@ -131,10 +130,14 @@ def main():
                     f"{name_without_ext}_run_{run}.json"
                 )
                 tasks.append((graph, drawing_filepath, args.violations))
-            
+
             # 並列実行
-            with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
-                violation_values = list(executor.map(calculate_violation_for_run, tasks))
+            with ProcessPoolExecutor(
+                max_workers=multiprocessing.cpu_count()
+            ) as executor:
+                violation_values = list(
+                    executor.map(calculate_violation_for_run, tasks)
+                )
 
             # 中央値を計算
             median_violation = np.median(violation_values)
