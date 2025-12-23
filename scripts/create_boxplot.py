@@ -3,9 +3,13 @@ import csv
 import itertools
 
 import matplotlib
+
+matplotlib.use("agg")
+
+
 import matplotlib.pyplot as plt
 
-from boxplot_2item import boxplot_2item_plot_only
+from boxplot_2item import boxplot_2item_plot_only, boxplot_seaborn
 
 
 def main():
@@ -27,18 +31,20 @@ def main():
             continue
         for _, rows in itertools.groupby(method_rows, lambda row: int(row["n"])):
             values[method].append([float(row["value"]) for row in list(rows)])
-    print(args.methods, labels, values)
-    matplotlib.use("agg")
-    boxplot_2item_plot_only(
-        values[args.methods[0]],
-        values[args.methods[1]],
+
+    boxplot_seaborn(
+        {
+            args.methods[0]: {"data": values[args.methods[0]], "baseline": []},
+            args.methods[1]: {"data": values[args.methods[1]], "baseline": []},
+        },
         labels,
-        args.methods,
+        show_legend=True,
     )
+    
     plt.xlabel(args.xlabel)
     plt.ylabel(args.ylabel)
     plt.title(args.title)
-    plt.savefig(args.out)
+    plt.savefig(args.out, bbox_inches="tight", pad_inches=0.02)
 
 
 if __name__ == "__main__":
