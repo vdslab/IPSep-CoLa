@@ -32,6 +32,8 @@ OUTPUT_CSV="$GRAPH_DIR"/"$TYPE_FILE".csv
 SGD="FullSGD(ours)"
 WEBCOLA="WebCoLa"
 UNICON="UNICON"
+INLINE="Inline Projection"
+POST="Post-processing Projection"
 
 # -----------------------------------------------------------------------------
 # 関数定義
@@ -66,13 +68,11 @@ process_method() {
 
 	# VIOLATION_TYPEに基づいてフラグを設定
 	if [ "$VIOLATION_TYPE" = "overlap" ]; then
-		SGD_OVERLAP_FLAG="--overlap-removal"
+		SGD_FLAG="--overlap-removal"
 		WEBCOLA_OVERLAP_FLAG="--overlapRemoval"
-		UNICON_OVERLAP_FLAG="--overlap-removal"
 	else
-		SGD_OVERLAP_FLAG=""
+		SGD_FLAG=""
 		WEBCOLA_OVERLAP_FLAG=""
-		UNICON_OVERLAP_FLAG=""
 	fi
 
 	for n in $(seq -f "%04g" $START $STEP $END); do
@@ -92,7 +92,7 @@ process_method() {
 						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
 						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
 						--output-suffix '_run_{}' \
-						$SGD_OVERLAP_FLAG
+						$SGD_FLAG
 					;;
 				'$WEBCOLA')
 					node js/src/draw_webcola.js \
@@ -105,7 +105,22 @@ process_method() {
 						'$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json' \
 						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
 						--output-suffix '_run_{}' \
-						$UNICON_OVERLAP_FLAG
+						$SGD_FLAG
+					;;
+				'$INLINE')
+					python scripts/draw.py \
+						'$GRAPH_DIR/$TYPE/$n'/*.json \
+						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
+						--output-suffix '_run_{}' \
+						$SGD_FLAG
+					;;
+				'$POST')
+					python scripts/draw.py \
+						--space 'after_project' \
+						--dest '$DRAWING_DIR/$method_name/$TYPE/$n' \
+						'$GRAPH_DIR/$TYPE/$n'/*.json \
+						--output-suffix '_run_{}' \
+						$SGD_FLAG
 					;;
 				*)
 					echo 'エラー: 未知の手法です - $method_name' >&2
@@ -162,7 +177,10 @@ analyze_results() {
 # メイン処理
 # -----------------------------------------------------------------------------
 main() {
-	local all_methods=("$WEBCOLA" "$SGD" "$UNICON")
+	# local all_methods=("$WEBCOLA" "$SGD" "$UNICON")
+	# local all_methods=("$WEBCOLA" "$SGD" )
+	local all_methods=("$UNICON" "$INLINE" "$POST")
+	# local all_methods=("$SGD")
 
 	generate_graph_list
 
@@ -170,7 +188,7 @@ main() {
 		process_method "$method"
 	done
 
-	analyze_results "${all_methods[@]}"
+	# analyze_results "${all_methods[@]}"
 
 	log_info "すべての処理が完了しました。"
 }

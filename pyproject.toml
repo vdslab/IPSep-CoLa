@@ -12,7 +12,7 @@ dependencies = [
     "maturin>=1.7.0",
     "pip>=24.2",
     "ruff>=0.12.3",
-    "egraph>=0.3.1",
+    "egraph @ file:///home/iharuki/school/itohal/IP-31/egraph-rs/crates/python",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"

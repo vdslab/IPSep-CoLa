@@ -30,6 +30,6 @@ cd "$(dirname "$0")/.." || exit
 # 	python scripts/create_boxplot.py result/stress/$type-0100-2000.csv result/stress/$type-0100-2000.png
 # done
 
-bash ./shell_scripts/run_experiment.sh "watts_strogatz/neighbor_2/rewire_030/gap" 100 2000 100 "constraint"
-bash ./shell_scripts/run_experiment.sh "watts_strogatz/neighbor_2/rewire_030/layered" 100 2000 100 "constraint"
+# bash ./shell_scripts/run_experiment.sh "watts_strogatz/neighbor_2/rewire_030/gap" 100 2000 100 "constraint"
+# bash ./shell_scripts/run_experiment.sh "watts_strogatz/neighbor_2/rewire_030/layered" 100 2000 100 "constraint"
 bash ./shell_scripts/run_experiment.sh "watts_strogatz/neighbor_2/rewire_030/overlap/rect100" 100 2000 100 "overlap"

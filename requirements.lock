@@ -12,7 +12,7 @@ contourpy==1.2.0
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-egraph==0.3.1
+egraph @ file:///home/iharuki/school/itohal/IP-31/egraph-rs/crates/python
     # via ipsep-cola
 fonttools==4.50.0
     # via matplotlib
