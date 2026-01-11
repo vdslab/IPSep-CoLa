@@ -2,12 +2,12 @@
 
 ## 環境
 
-use rye
+use uv
 
-- https://rye-up.com/guide/installation/
+- https://docs.astral.sh/uv/getting-started/installation/
 
 ```bash
-rye sync
+uv sync --extra dev
 ```
 
 # Workflow
@@ -15,7 +15,7 @@ rye sync
 ## Generate graphs
 
 ```
-python src/data/generate_overlap_graphs.py
+uv run python src/data/generate_overlap_graphs.py
 ```
 
 ## Generate sgd tree drawing
@@ -23,7 +23,7 @@ python src/data/generate_overlap_graphs.py
 ```
 for n in `seq -f '%04.0f' 100 100 2000`
 do
-  python scripts/draw.py --dest data/drawing/sgd/random_tree/$n data/graph/random_tree/$n/*
+  uv run python scripts/draw.py --dest data/drawing/sgd/random_tree/$n data/graph/random_tree/$n/*
 done
 ```
 
@@ -32,7 +32,7 @@ done
 ```
 for n in `seq -f '%04.0f' 100 100 2000`
 do
-  python scripts/draw_webcola.py --dest data/drawing/webcola/random_tree/$n data/graph/random_tree/$n/*
+  uv run python scripts/draw_webcola.py --dest data/drawing/webcola/random_tree/$n data/graph/random_tree/$n/*
 done
 ```
 
@@ -41,7 +41,7 @@ done
 ```
 for n in `seq -f '%04.0f' 100 100 2000`
 do
-  python scripts/draw.py --dest data/drawing/sgd/overlap/$n --overlap-removal data/graph/overlap/$n/*
+  uv run python scripts/draw.py --dest data/drawing/sgd/overlap/$n --overlap-removal data/graph/overlap/$n/*
 done
 ```
 
@@ -50,20 +50,20 @@ done
 ```
 for n in `seq -f '%04.0f' 100 100 2000`
 do
-  python scripts/draw_webcola.py --dest data/drawing/webcola/overlap/$n --overlap-removal data/graph/overlap/$n/*
+  uv run python scripts/draw_webcola.py --dest data/drawing/webcola/overlap/$n --overlap-removal data/graph/overlap/$n/*
 done
 ```
 
 ## Generate sgd cluster-no-overlap drawing
 
 ```
-parallel --bar 'python scripts/draw.py --dest=data/drawing/sgd/cluster/{1} --overlap-removal --cluster-overlap-removal data/graph/cluster/{1}/node_n={1}_{2}.json' ::: $(seq -f '%04.0f' 100 100 2000) ::: $(seq -f '%02.0f' 0 19)
+parallel --bar 'uv run python scripts/draw.py --dest=data/drawing/sgd/cluster/{1} --overlap-removal --cluster-overlap-removal data/graph/cluster/{1}/node_n={1}_{2}.json' ::: $(seq -f '%04.0f' 100 100 2000) ::: $(seq -f '%02.0f' 0 19)
 ```
 
 ## Generate webcola cluster-no-overlap drawing
 
 ```
-parallel --bar 'python scripts/draw_webcola.py --dest=data/drawing/webcola/cluster/{1} --overlap-removal --cluster-overlap-removal data/graph/cluster/{1}/node_n={1}_{2}.json' ::: $(seq -f '%04.0f' 100 100 2000) ::: $(seq -f '%02.0f' 0 19)
+parallel --bar 'uv run python scripts/draw_webcola.py --dest=data/drawing/webcola/cluster/{1} --overlap-removal --cluster-overlap-removal data/graph/cluster/{1}/node_n={1}_{2}.json' ::: $(seq -f '%04.0f' 100 100 2000) ::: $(seq -f '%02.0f' 0 19)
 ```
 
 ## Plot to PNG
@@ -78,8 +78,8 @@ parallel --bar 'node js/src/render.js --graphFile=data/graph/{2}/{3}/node_n\={3}
 ```
 for type in cluster
 do
-  python scripts/calc_stress.py data/graph/$type.csv result/stress/$type-0100-2000.csv
-  python scripts/create_boxplot.py result/stress/$type-0100-2000.csv result/stress/$type-0100-2000.png
+  uv run python scripts/calc_stress.py data/graph/$type.csv result/stress/$type-0100-2000.csv
+  uv run python scripts/create_boxplot.py result/stress/$type-0100-2000.csv result/stress/$type-0100-2000.png
 done
 ```
 
@@ -88,8 +88,8 @@ done
 ```
 for type in random_tree
 do
-  python scripts/calc_violation.py data/graph/$type.csv result/stress/$type-0100-2000.csv
-  python scripts/create_boxplot.py result/stress/$type-0100-2000.csv result/stress/$type-0100-2000.png
+  uv run python scripts/calc_violation.py data/graph/$type.csv result/stress/$type-0100-2000.csv
+  uv run python scripts/create_boxplot.py result/stress/$type-0100-2000.csv result/stress/$type-0100-2000.png
 done
 ```
 
@@ -99,7 +99,7 @@ done
   - 中心から階層を計算、その後辺のノードペアに対して、層の差を距離とした
 
 ```bash
-python src/data/generate_constraint_by_type.py
+uv run python src/data/generate_constraint_by_type.py
 ```
 
 - stressとviolationの計測
@@ -119,13 +119,13 @@ python src/data/generate_constraint_by_type.py
 - 実行方法
 
 ```bash
-python scripts/drawing_and_stress_violation.py <graph file> <save directory> [option]
+uv run python scripts/drawing_and_stress_violation.py <graph file> <save directory> [option]
 ```
 
 - 箱ひげ図の生成
 
 ```bash
-python scripts/compare_stress_violation.py <compared directory> [option]
+uv run python scripts/compare_stress_violation.py <compared directory> [option]
 ```
 
 
@@ -139,13 +139,13 @@ python scripts/compare_stress_violation.py <compared directory> [option]
 - グラフから一部を取り出す。距離行列も計算している
 
 ```bash
-python scripts/convert_large_mtx_to_ego.py <mtx graph file path> <networkx graph file output path> <hub number(中心の数)> <radius(中心からの半径)>
+uv run python scripts/convert_large_mtx_to_ego.py <mtx graph file path> <networkx graph file output path> <hub number(中心の数)> <radius(中心からの半径)>
 ```
 
 - 必要であれば同心円状の制約を付加する。引数のファイルに追加される
 
 ```bash
-python scripts/add_circle_constraint.py <networkx graph file path>
+uv run python scripts/add_circle_constraint.py <networkx graph file path>
 ```
 
 # non Euclidean drawing
@@ -153,15 +153,15 @@ python scripts/add_circle_constraint.py <networkx graph file path>
 ## torus
 
 ```bash
-python scripts/draw.py --space torus [option] <graph file path>
-python scripts/plot_torus.py <graph file> <drawing file> <output file>
+uv run python scripts/draw.py --space torus [option] <graph file path>
+uv run python scripts/plot_torus.py <graph file> <drawing file> <output file>
 ```
 
 ## hyper
 
 ```bash
-python scripts/draw.py --space hyperbolic [option] <graph file path>
-python scripts/plot.py <graph file> <drawing file> <output file>
+uv run python scripts/draw.py --space hyperbolic [option] <graph file path>
+uv run python scripts/plot.py <graph file> <drawing file> <output file>
 ```
 
 # project
