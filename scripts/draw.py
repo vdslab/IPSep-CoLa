@@ -43,7 +43,7 @@ def main():
     for filepath in args.input:
         basename = os.path.basename(filepath)
         with open(filepath) as fp:
-            graph = nx.node_link_graph(json.load(fp), link="links")
+            graph = nx.node_link_graph(json.load(fp), edges="links")
         clusters = None
         if args.cluster_overlap_removal:
             clusters = [graph.nodes[u]["group"] for u in graph.nodes]

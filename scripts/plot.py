@@ -18,7 +18,7 @@ def main():
 
     args = parser.parse_args()
 
-    graph = nx.node_link_graph(json.load(open(args.graph_file)))
+    graph = nx.node_link_graph(json.load(open(args.graph_file)), edges="links")
     pos = json.load(open(args.drawing_file))
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     plot_graph(
