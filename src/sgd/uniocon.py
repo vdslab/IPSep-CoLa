@@ -8,6 +8,7 @@ from networkx import all_pairs_dijkstra_path_length
 from util.graph import nxgraph_to_eggraph
 from util.graph.save_animation import save_animation
 from util.parameter import SGDParameter
+from util.timer import timed, timer
 
 from .projection.circle_constraints import project_circle_constraints
 from .projection.distance_constraints import project_distance_constraints
@@ -79,18 +80,33 @@ def sgd(nx_graph, overlap_removal=False, clusters=None, iterations=30, eps=0.1, 
         parameter.eps,  # eps: eta_min = eps * min d[i, j] ^ 2
     )
 
-    for i in range(parameter.iter):
-        # print_progress_bar(i, parameter.iter)
+    # 各処理を計測可能な関数として定義
+    @timed("SGD_step")
+    def apply_sgd_step():
         sgd_scheduler.step(step)
-        if overlap_removal:
-            # overlap.apply_with_drawing_euclidean_2d(drawing)
-            eg.project_rectangle_no_overlap_constraints_2d(
-                drawing, lambda u, d: size[u][d]
-            )
-        for constraint in x_constraints:
-            eg.project_1d(drawing, 0, [constraint])
-        for constraint in y_constraints:
-            eg.project_1d(drawing, 1, [constraint])
+
+    @timed("Overlap_removal")
+    def apply_overlap_removal():
+        eg.project_rectangle_no_overlap_constraints_2d(drawing, lambda u, d: size[u][d])
+
+    @timed("X_constraints")
+    def apply_x_constraints(constraint):
+        eg.project_1d(drawing, 0, [constraint])
+
+    @timed("Y_constraints")
+    def apply_y_constraints(constraint):
+        eg.project_1d(drawing, 1, [constraint])
+
+    for i in range(parameter.iter):
+        with timer(f"Iteration_{i}"):
+            # print_progress_bar(i, parameter.iter)
+            apply_sgd_step()
+            if overlap_removal:
+                apply_overlap_removal()
+            for constraint in x_constraints:
+                apply_x_constraints(constraint)
+            for constraint in y_constraints:
+                apply_y_constraints(constraint)
 
     pos = {u: [drawing.x(indices[u]), drawing.y(indices[u])] for u in nx_graph.nodes}
     return pos
