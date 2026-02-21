@@ -27,10 +27,11 @@ def calculate_stress_for_run(args):
     D_low = _pairwise_euclidean(P_low)
 
     # SNS と α* を計算
-    sns, alpha_star = scale_normalized_stress(D_high, D_low)
-    # ns = normalized_stress(D_high, D_low)
+    # sns, alpha_star = scale_normalized_stress(D_high, D_low)
+    ns = normalized_stress(D_high, D_low)
 
-    return sns, alpha_star  # α* を返す
+    # return sns, alpha_star  # α* を返す
+    return ns, 1
 
 
 def main():
