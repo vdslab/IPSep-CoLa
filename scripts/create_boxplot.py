@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--xlabel", default="")
     parser.add_argument("--ylabel", default="")
     parser.add_argument("--methods", nargs=2, required=True)
+    parser.add_argument("--legend", nargs=2, required=True)
     args = parser.parse_args()
 
     data = [row for row in csv.DictReader(open(args.csv_file))]
@@ -34,8 +35,8 @@ def main():
 
     boxplot_seaborn(
         {
-            args.methods[0]: {"data": values[args.methods[0]], "baseline": []},
-            args.methods[1]: {"data": values[args.methods[1]], "baseline": []},
+            args.legend[0]: {"data": values[args.methods[0]], "baseline": []},
+            args.legend[1]: {"data": values[args.methods[1]], "baseline": []},
         },
         labels,
         show_legend=True,

@@ -118,7 +118,7 @@ def main():
     for method in methods:
         for row in data:
             graph_filepath = os.path.join(os.path.dirname(args.csv_file), row["path"])
-            graph = nx.node_link_graph(json.load(open(graph_filepath)))
+            graph = nx.node_link_graph(json.load(open(graph_filepath)), edges="links")
 
             # 10回の実行結果から違反量を計算（並列実行）
             tasks = []

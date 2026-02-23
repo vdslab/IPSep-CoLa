@@ -27,10 +27,11 @@ def calculate_stress_for_run(args):
     D_low = _pairwise_euclidean(P_low)
 
     # SNS と α* を計算
-    sns, alpha_star = scale_normalized_stress(D_high, D_low)
-    # ns = normalized_stress(D_high, D_low)
+    # sns, alpha_star = scale_normalized_stress(D_high, D_low)
+    ns = normalized_stress(D_high, D_low)
 
-    return sns, alpha_star  # α* を返す
+    # return sns, alpha_star  # α* を返す
+    return ns, 1
 
 
 def main():
@@ -48,7 +49,7 @@ def main():
     for method in methods:
         for row in data:
             graph_filepath = os.path.join(os.path.dirname(args.csv_file), row["path"])
-            graph = nx.node_link_graph(json.load(open(graph_filepath)))
+            graph = nx.node_link_graph(json.load(open(graph_filepath)), edges="links")
             nodes = list(graph.nodes)
 
             # 10回の実行結果からストレスを計算（並列実行）

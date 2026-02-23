@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--edge-length", default=100, type=int)
     args = parser.parse_args()
 
-    graph: nx.Graph = nx.node_link_graph(json.load(open(args.input)), link="links")
+    graph: nx.Graph = nx.node_link_graph(json.load(open(args.input)), edges="links")
 
     # 制約データから入次数0のノードを抽出
     constraints = graph.graph.get("constraints", [])
@@ -51,13 +51,19 @@ def main():
         vl = nodeidx_layer[indices[v]]
         left, right = (u, v) if ul < vl else (v, u)
         constraint.append(
-            {"axis": "y", "left": left, "right": right, "gap": abs(ul - vl)*args.edge_length}
+            {
+                "axis": "y",
+                "left": left,
+                "right": right,
+                "gap": abs(ul - vl) * args.edge_length,
+            }
         )
     graph.graph["constraints"] = constraint
     # graph.graph["layer_constraints"] = constraint
     # 3. NetworkXグラフをJSON形式に適した辞書に変換
     # ノードとリンクのデータ（最も一般的な形式）
-    data_for_json = nx.node_link_data(graph)
+    data_for_json = nx.node_link_data(graph, edges="links")
+
     # 4. 辞書をJSONファイルとして保存
     import os
 

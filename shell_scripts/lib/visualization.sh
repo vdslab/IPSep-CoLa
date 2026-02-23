@@ -21,7 +21,7 @@ create_single_boxplot() {
     local method2="$4"
     local ylabel="$5"
     
-    python scripts/create_boxplot.py \
+    uv run python scripts/create_boxplot.py \
         "$input_csv" \
         "$output_pdf" \
         --methods "$method1" "$method2" \
@@ -77,7 +77,7 @@ ratio_box_plot() {
     local method2="$2"
     local result_prefix=$(get_result_prefix)
     
-    python scripts/ratio_boxplot.py \
+    uv run python scripts/ratio_boxplot.py \
         "$RATIO_DIR/${result_prefix}_${method1}_${method2}_ratio.csv" \
         "$RATIO_DIR/${result_prefix}_${method1}_${method2}_ratio.pdf" \
         --xlabel "Number of Nodes"

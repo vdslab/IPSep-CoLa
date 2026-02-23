@@ -2,9 +2,9 @@ import matplotlib as mpl
 
 mpl.use("Agg")
 
-
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import matplotlib_fontja
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -12,6 +12,7 @@ import seaborn as sns
 
 def set_paper_style(font_scale=1.5, save_dpi=300):
     sns.set_theme(style="whitegrid", context="paper", font_scale=font_scale)
+    matplotlib_fontja.japanize()
     mpl.rcParams.update(
         {
             # 画面表示用dpi（重要度低い）
@@ -67,7 +68,7 @@ def boxplot_seaborn(data_dict, x_labels, show_legend=True, l="v"):
 
     df = pd.DataFrame(records)
     # 2. 描画
-    plt.figure(figsize=(12, 8), layout="constrained")
+    plt.figure(figsize=(14, 10), layout="constrained")
 
     # データの種類数に応じてパレットを自動調整
     set_paper_style()
@@ -77,7 +78,7 @@ def boxplot_seaborn(data_dict, x_labels, show_legend=True, l="v"):
         hue="Type",
         data=df,
         width=0.6,  # 全体の幅
-        palette="viridis",  # 色の自動生成
+        palette="gist_ncar",  # 色の自動生成
         legend=show_legend,
     )
     ax = plt.gca()

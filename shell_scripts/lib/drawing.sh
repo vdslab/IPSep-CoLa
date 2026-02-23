@@ -19,7 +19,7 @@ run_fullsgd() {
     local run_id="$3"
     local overlap_flag="$4"
     
-    python scripts/draw.py --space euclidean \
+    uv run python scripts/draw.py --space euclidean \
         "$graph_file" \
         --dest "$output_dir" \
         --output-suffix "_run_${run_id}" \
@@ -54,7 +54,7 @@ run_unicon() {
     local run_id="$3"
     local overlap_flag="$4"
     
-    python scripts/draw_unicon.py \
+    uv run python scripts/draw_unicon.py \
         "$graph_file" \
         --dest "$output_dir" \
         --output-suffix "_run_${run_id}" \
@@ -73,7 +73,7 @@ run_inline() {
     local run_id="$3"
     local overlap_flag="$4"
     
-    python scripts/draw.py \
+    uv run python scripts/draw.py \
         "$graph_file" \
         --dest "$output_dir" \
         --output-suffix "_run_${run_id}" \
@@ -92,7 +92,7 @@ run_postprocess() {
     local run_id="$3"
     local overlap_flag="$4"
     
-    python scripts/draw.py \
+    uv run python scripts/draw.py \
         --space 'after_project' \
         "$graph_file" \
         --dest "$output_dir" \
@@ -222,7 +222,7 @@ plot_results() {
         n={}
         # サンプル0, 5, 10, 15のみプロット
         for i in 00 05 10 15; do
-            python scripts/plot.py \
+            uv run python scripts/plot.py \
                 \"$GRAPH_DIR/$TYPE/\$n/node_n=\${n}_\${i}.json\" \
                 \"$DRAWING_DIR/$method_name/$TYPE/\$n/node_n=\${n}_\${i}_run_0.json\" \
                 \"$PLOT_DIR/$method_name/$TYPE/\$n/node_n=\${n}_\${i}_run_0.png\"
