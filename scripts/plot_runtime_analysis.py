@@ -223,10 +223,10 @@ def plot_method_comparison(data_dict, suffix, output_path):
     fig, ax = plt.subplots(1, 1, figsize=(14, 10), layout="constrained")
 
     method_names = {
-        "fullsgd": "Full SGD",
-        "inline": "Inline",
-        "post": "Post",
-        "unicon": "Unicon",
+        "fullsgd": "SGD",
+        "inline": "反復内",
+        "post": "後処理",
+        "unicon": "UNICON",
         "webcola": "WebCoLa",
     }
 
@@ -246,6 +246,8 @@ def plot_method_comparison(data_dict, suffix, output_path):
             color=colors[idx],
         )
 
+    # ax.set_xscale("log")
+    # ax.set_yscale("log")
     ax.set_xlabel("ノードサイズ")
     ax.set_ylabel("実行時間（秒）")
     ax.set_title(f"手法間比較: Iter_total_median ({suffix})")
@@ -261,18 +263,40 @@ def plot_ratio_comparison(data_dict, suffix, output_path):
     """手法間でSGD割合とY割合を比較"""
     set_paper_style(font_scale=1.3)
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 12), layout="constrained")
+    fig, (ax, ax1) = plt.subplots(
+        2, 1, figsize=(14, 12), layout="constrained", gridspec_kw={"hspace": 0.1}
+    )
 
     method_names = {
-        "fullsgd": "Full SGD",
-        "inline": "Inline",
-        "post": "Post",
-        "unicon": "Unicon",
+        "fullsgd": "同時射影",
+        "inline": "反復内",
+        "post": "後処理",
+        "unicon": "UNICON",
         "webcola": "WebCoLa",
     }
 
     colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
     markers = ["o", "s", "^", "d", "v"]
+
+    for idx, (method, df) in enumerate(data_dict.items()):
+        x = df["NodeSize"]
+        y = df["Iter_total_median"]
+        ax.plot(
+            x,
+            y,
+            marker=markers[idx],
+            linewidth=2,
+            markersize=8,
+            label=method_names.get(method, method),
+            color=colors[idx],
+        )
+
+    # ax.set_xscale("log")
+    # ax.set_yscale("log")
+    ax.set_xlabel("ノードサイズ")
+    ax.set_ylabel("合計実行時間（秒）")
+    ax.set_title("合計実行時間の比較")
+    ax.grid(True, alpha=0.3)
 
     # 上段: SGD割合の比較
     for idx, (method, df) in enumerate(data_dict.items()):
@@ -291,47 +315,18 @@ def plot_ratio_comparison(data_dict, suffix, output_path):
             marker=markers[idx],
             linewidth=2,
             markersize=8,
-            label=method_names.get(method, method),
+            # label=method_names.get(method, method),
             color=colors[idx],
         )
 
     ax1.set_xlabel("ノードサイズ")
     ax1.set_ylabel("割合（%）")
-    ax1.set_title(f"手法間比較: SGD割合 ({suffix})")
-    ax1.legend(loc="best")
+    ax1.set_title("合計実行時間の内SGDが占める割合")
     ax1.grid(True, alpha=0.3)
     ax1.set_ylim(0, 105)
 
-    # 下段: Y割合の比較
-    for idx, (method, df) in enumerate(data_dict.items()):
-        x = df["NodeSize"]
-
-        # webcolaの場合はカラム名が異なる
-        if method == "webcola" and "initialLayout_total_median" in df.columns:
-            y_comp = (
-                df["initialAllConstraints_total_median"]
-                + df["updateNodePositions_total_median"]
-            )
-        else:
-            y_comp = df["Y_total_median"]
-
-        y_ratio = (y_comp / df["Iter_total_median"]) * 100
-        ax2.plot(
-            x,
-            y_ratio,
-            marker=markers[idx],
-            linewidth=2,
-            markersize=8,
-            label=method_names.get(method, method),
-            color=colors[idx],
-        )
-
-    ax2.set_xlabel("ノードサイズ")
-    ax2.set_ylabel("割合（%）")
-    ax2.set_title(f"手法間比較: Y割合 ({suffix})")
-    ax2.legend(loc="best")
-    ax2.grid(True, alpha=0.3)
-    ax2.set_ylim(0, 105)
+    # 図全体の上部に共有凡例を配置
+    fig.legend(bbox_to_anchor=(0.5, 1.02), loc="lower center", ncol=5)
 
     plt.savefig(output_path, bbox_inches="tight")
     plt.close()
