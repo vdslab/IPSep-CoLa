@@ -8,8 +8,7 @@ matplotlib.use("agg")
 
 
 import matplotlib.pyplot as plt
-
-from boxplot_2item import boxplot_2item_plot_only, boxplot_seaborn
+from plotting.box_plot import boxplot_seaborn
 
 
 def main():
@@ -41,7 +40,7 @@ def main():
         labels,
         show_legend=True,
     )
-    
+
     plt.xlabel(args.xlabel)
     plt.ylabel(args.ylabel)
     plt.title(args.title)
