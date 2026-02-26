@@ -12,7 +12,7 @@ dependencies = [
     "maturin>=1.7.0",
     "pip>=24.2",
     "ruff>=0.12.3",
-    "egraph @ file:///home/iharuki/school/itohal/IPSep-CoLa/egraph-rs/crates/python",
+    "egraph",
     "pandas>=2.3.3",
     "seaborn>=0.13.2",
     "matplotlib-fontja>=1.1.0",
@@ -24,8 +24,17 @@ requires-python = ">= 3.12"
 dev = ["snakeviz>=2.2.0"]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.9.16,<0.10.0"]
+build-backend = "uv_build"
 
-[tool.hatch.metadata]
-allow-direct-references = true
+[tool.uv.sources]
+egraph = { workspace = true, editable = true }
+
+[tool.uv.workspace]
+members = [
+    "package/core",
+    "package/plotting",
+    "cli",
+    "egraph-rs/crates/python",
+    "package/util",
+]
