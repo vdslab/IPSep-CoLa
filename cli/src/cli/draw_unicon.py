@@ -4,8 +4,7 @@ import os
 import random
 
 import networkx as nx
-
-from sgd.uniocon import sgd
+from core.sgd.uniocon import sgd
 from util.timer import profiler
 
 
@@ -46,7 +45,12 @@ def main():
     # Apply profiler if timing is enabled
     sgd_func = sgd
     if args.timing_level > 0:
-        sgd_func = profiler(sgd, timing_level=args.timing_level, timing_output_file=args.timing_output, quiet=args.timing_quiet)
+        sgd_func = profiler(
+            sgd,
+            timing_level=args.timing_level,
+            timing_output_file=args.timing_output,
+            quiet=args.timing_quiet,
+        )
 
     os.makedirs(args.dest, exist_ok=True)
     for filepath in args.input:
@@ -76,7 +80,7 @@ def main():
 if __name__ == "__main__":
     # main()
 
-    import cProfile
+    # import cProfile
 
     # cProfile.run("main()", filename="main.prof")
     main()
