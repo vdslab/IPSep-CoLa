@@ -4,8 +4,7 @@ import itertools
 
 import matplotlib
 import matplotlib.pyplot as plt
-
-from boxplot_2item import boxplot_2item_plot_only, boxplot_seaborn
+from plotting.box_plot import boxplot_seaborn
 
 matplotlib.use("agg")
 

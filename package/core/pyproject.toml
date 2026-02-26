@@ -1,0 +1,26 @@
+[project]
+name = "core"
+version = "0.1.0"
+description = "Core libraries for IPSep-CoLa graph drawing"
+readme = "README.md"
+authors = [{ name = "itochs", email = "halglobe0108@gmail.com" }]
+requires-python = ">=3.12"
+dependencies = [
+    "networkx",
+    "numpy>=2.4.2",
+    "matplotlib>=3.10.8",
+    "scipy",
+    "egraph",
+    "util",
+]
+
+[tool.uv]
+package = true
+
+[tool.uv.sources]
+egraph = { path = "../../egraph-rs/crates/python", editable = true }
+util = { path = "../util", editable = true }
+
+[build-system]
+requires = ["uv_build>=0.9.16,<0.10.0"]
+build-backend = "uv_build"

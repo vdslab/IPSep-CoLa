@@ -1,0 +1,30 @@
+[project]
+name = "cli"
+version = "0.1.0"
+description = "CLI tools for IPSep-CoLa graph drawing"
+readme = "README.md"
+authors = [{ name = "itochs", email = "halglobe0108@gmail.com" }]
+requires-python = ">=3.12"
+dependencies = [
+    "core",
+    "plotting",
+    "networkx",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.2",
+    "util",
+]
+
+[tool.uv.sources]
+core = { workspace = true, editable = true }
+plotting = { workspace = true, editable = true }
+util = { workspace = true, editable = true }
+
+[project.scripts]
+draw = "cli.draw:main"
+plot = "cli.plot:main"
+draw-webcola = "cli.draw_webcola:main"
+draw-unicon = "cli.draw_unicon:main"
+
+[build-system]
+requires = ["uv_build>=0.9.16,<0.10.0"]
+build-backend = "uv_build"

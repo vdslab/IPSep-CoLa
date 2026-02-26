@@ -10,6 +10,20 @@ use uv
 uv sync --extra dev
 ```
 
+# Library / CLI
+
+`ipsep_cola` はライブラリとして import 可能です。
+
+```bash
+uv run python -c "import ipsep_cola; import ipsep_cola.main; print(ipsep_cola.__file__)"
+```
+
+簡単な実行は CLI からもできます（位置 + stress/time を JSON に保存、必要なら PNG も出力）。
+
+```bash
+uv run ipsep-cola <graph.json> --out result/drawing.json --plot result/drawing.png
+```
+
 # Workflow
 
 ## Generate graphs

@@ -18,7 +18,7 @@ calculation() {
     local result_prefix=$(get_result_prefix)
     
     # ストレス（Stress）の計算
-    uv run python scripts/calc_stress.py \
+    uv run --project "$REPO_ROOT" python scripts/calc_stress.py \
         "$OUTPUT_CSV" \
         "$STRESS_DIR/$result_prefix.csv" \
         --methods "${methods[@]}"
@@ -30,7 +30,7 @@ calculation() {
     fi
     
     # 制約違反（Violation）の計算
-    uv run python scripts/calc_violation.py \
+    uv run --project "$REPO_ROOT" python scripts/calc_violation.py \
         "$OUTPUT_CSV" \
         "$VIOLATION_DIR/$result_prefix.csv" \
         --methods "${methods[@]}" \
@@ -54,7 +54,7 @@ calc_ratio() {
     local proposed_method="$2"
     local result_prefix=$(get_result_prefix)
     
-    uv run python scripts/compare_stress_ratio.py \
+    uv run --project "$REPO_ROOT" python scripts/compare_stress_ratio.py \
         "$STRESS_DIR/$result_prefix.csv" \
         "$RATIO_DIR/${result_prefix}_${baseline_method}_${proposed_method}_ratio.csv" \
         --methods "$baseline_method" "$proposed_method"
