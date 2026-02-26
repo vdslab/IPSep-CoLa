@@ -1,5 +1,10 @@
-#!/bin/bash
-cd "$(dirname "$0")/.." || exit
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+cd "$REPO_ROOT"
 
 # -----------------------------------------------------------------------------
 # 設定セクション
@@ -58,13 +63,13 @@ process_method() {
 		# 手法ごとに描画コマンドを実行
 		case "$method_name" in
 		"$DURING")
-			python scripts/draw.py \
+			uv run --project "$REPO_ROOT/cli" draw \
 				"$GRAPH_DIR/$TYPE/$n"/*.json \
 				--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
 				--overlap-removal
 			;;
 		"$AFTER")
-			python scripts/draw.py \
+			uv run --project "$REPO_ROOT/cli" draw \
 				--space "after_project" \
 				--dest "$DRAWING_DIR/$method_name/$TYPE/$n" \
 				"$GRAPH_DIR/$TYPE/$n"/*.json \
@@ -78,7 +83,7 @@ process_method() {
 
 		# 描画結果をプロット
 		for i in $(seq -w 0 5 19); do
-			python scripts/plot.py \
+			uv run --project "$REPO_ROOT/cli" plot \
 				"$GRAPH_DIR/$TYPE/$n/node_n=${n}_$i.json" \
 				"$DRAWING_DIR/$method_name/$TYPE/$n/node_n=${n}_$i.json" \
 				"$PLOT_DIR/$method_name/$TYPE/$n/node_n=${n}_$i.png"
@@ -93,12 +98,12 @@ analyze_results() {
 	local result_prefix="$TYPE-$START-$END"
 
 	# Stress（ストレス）の計算と可視化
-	python scripts/calc_stress.py \
+	uv run --project "$REPO_ROOT" python scripts/calc_stress.py \
 		"$GRAPH_DIR/$TYPE.csv" \
 		"$STRESS_DIR/$result_prefix.csv" \
 		--methods "${methods[0]}" "${methods[1]}"
 
-	python scripts/create_boxplot.py \
+	uv run --project "$REPO_ROOT" python scripts/create_boxplot.py \
 		"$STRESS_DIR/$result_prefix.csv" \
 		"$STRESS_DIR/$result_prefix.png" \
 		--methods "${methods[0]}" "${methods[1]}" \
@@ -107,13 +112,13 @@ analyze_results() {
 		--xlabel "node size"
 
 	# Violation（制約違反）の計算と可視化
-	python scripts/calc_violation.py \
+	uv run --project "$REPO_ROOT" python scripts/calc_violation.py \
 		"$GRAPH_DIR/$TYPE.csv" \
 		"$VIOLATION_DIR/$result_prefix.csv" \
 		--methods "${methods[0]}" "${methods[1]}" \
 		--violations "$VIOLATION_TYPE"
 
-	python scripts/create_boxplot.py \
+	uv run --project "$REPO_ROOT" python scripts/create_boxplot.py \
 		"$VIOLATION_DIR/$result_prefix.csv" \
 		"$VIOLATION_DIR/$result_prefix.png" \
 		--methods "${methods[0]}" "${methods[1]}" \

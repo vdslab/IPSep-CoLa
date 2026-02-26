@@ -19,11 +19,11 @@ run_fullsgd() {
     local run_id="$3"
     local overlap_flag="$4"
     
-    uv run python scripts/draw.py --space euclidean \
-        "$graph_file" \
+    uv run --project "$REPO_ROOT/cli" draw --space euclidean \
         --dest "$output_dir" \
         --output-suffix "_run_${run_id}" \
-        $overlap_flag
+        $overlap_flag \
+        "$graph_file"
 }
 
 # WebCoLaでグラフレイアウトを実行します。
@@ -36,7 +36,7 @@ run_webcola() {
     local output_file="$2"
     local webcola_overlap_flag="$3"
     
-    node js/src/draw_webcola.js \
+    node "$REPO_ROOT/js/src/draw_webcola.js" \
         --graphFile "$graph_file" \
         --output "$output_file" \
         $webcola_overlap_flag
@@ -54,11 +54,11 @@ run_unicon() {
     local run_id="$3"
     local overlap_flag="$4"
     
-    uv run python scripts/draw_unicon.py \
-        "$graph_file" \
+    uv run --project "$REPO_ROOT/cli" draw-unicon \
         --dest "$output_dir" \
         --output-suffix "_run_${run_id}" \
-        $overlap_flag
+        $overlap_flag \
+        "$graph_file"
 }
 
 # Inline Projectionでグラフレイアウトを実行します。
@@ -73,11 +73,11 @@ run_inline() {
     local run_id="$3"
     local overlap_flag="$4"
     
-    uv run python scripts/draw.py \
-        "$graph_file" \
+    uv run --project "$REPO_ROOT/cli" draw \
         --dest "$output_dir" \
         --output-suffix "_run_${run_id}" \
-        $overlap_flag
+        $overlap_flag \
+        "$graph_file"
 }
 
 # Post-processing Projectionでグラフレイアウトを実行します。
@@ -92,12 +92,12 @@ run_postprocess() {
     local run_id="$3"
     local overlap_flag="$4"
     
-    uv run python scripts/draw.py \
+    uv run --project "$REPO_ROOT/cli" draw \
         --space 'after_project' \
-        "$graph_file" \
         --dest "$output_dir" \
         --output-suffix "_run_${run_id}" \
-        $overlap_flag
+        $overlap_flag \
+        "$graph_file"
 }
 
 # -----------------------------------------------------------------------------
@@ -222,7 +222,7 @@ plot_results() {
         n={}
         # サンプル0, 5, 10, 15のみプロット
         for i in 00 05 10 15; do
-            uv run python scripts/plot.py \
+            uv run --project \"$REPO_ROOT/cli\" plot \
                 \"$GRAPH_DIR/$TYPE/\$n/node_n=\${n}_\${i}.json\" \
                 \"$DRAWING_DIR/$method_name/$TYPE/\$n/node_n=\${n}_\${i}_run_0.json\" \
                 \"$PLOT_DIR/$method_name/$TYPE/\$n/node_n=\${n}_\${i}_run_0.png\"

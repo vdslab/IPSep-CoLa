@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 # =============================================================================
 # run_experiment.sh - グラフレイアウト実験のメインスクリプト
 # =============================================================================
@@ -20,13 +21,28 @@
 #
 # =============================================================================
 
-cd "$(dirname "$0")/.." || exit
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+export REPO_ROOT
+
+cd "$REPO_ROOT"
+
+require_cmd() {
+    local cmd="$1"
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "error: '$cmd' not found in PATH" >&2
+        exit 1
+    fi
+}
+
+require_cmd uv
+require_cmd parallel
+require_cmd node
 
 # -----------------------------------------------------------------------------
 # ライブラリの読み込み
 # -----------------------------------------------------------------------------
 
-SCRIPT_DIR="$(dirname "$0")"
 LIB_DIR="$SCRIPT_DIR/lib"
 
 # 各ライブラリファイルを読み込む

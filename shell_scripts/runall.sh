@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 # =============================================================================
 # runall.sh - 複数の実験を順次実行するスクリプト
 # =============================================================================
@@ -13,7 +14,11 @@
 #
 # =============================================================================
 
-cd "$(dirname "$0")/.." || exit
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+export REPO_ROOT
+
+cd "$REPO_ROOT"
 
 # -----------------------------------------------------------------------------
 # 実験パラメータ設定
@@ -21,7 +26,7 @@ cd "$(dirname "$0")/.." || exit
 
 # グラフサイズの範囲
 START=100
-END=2000
+END=100
 STEP=100
 
 # 評価メトリクス（Scale-normalized Stress）
@@ -37,34 +42,32 @@ echo "グラフサイズ: $START - $END (step: $STEP)"
 echo "評価メトリクス: $EVALUATION"
 echo "========================================"
 
-
 # Overlap除去の実験
 echo ""
 echo ">>> Overlap除去の実験を実行中..."
-./shell_scripts/run_experiment.sh \
-    'watts_strogatz/neighbor_2/rewire_030/overlap/rect100' \
-    $START $END $STEP \
-    'overlap' \
-    "$EVALUATION"
+bash "$REPO_ROOT/shell_scripts/run_experiment.sh" \
+	'watts_strogatz/neighbor_2/rewire_030/overlap/rect100' \
+	$START $END $STEP \
+	'overlap' \
+	"$EVALUATION"
 
 # Gap制約の実験
 echo ""
 echo ">>> Gap制約の実験を実行中..."
-./shell_scripts/run_experiment.sh \
-    'watts_strogatz/neighbor_2/rewire_030/gap' \
-    $START $END $STEP \
-    'constraint' \
-    "$EVALUATION"
+bash "$REPO_ROOT/shell_scripts/run_experiment.sh" \
+	'watts_strogatz/neighbor_2/rewire_030/gap' \
+	$START $END $STEP \
+	'constraint' \
+	"$EVALUATION"
 
 # Layered制約の実験
 echo ""
 echo ">>> Layered制約の実験を実行中..."
-./shell_scripts/run_experiment.sh \
-    'watts_strogatz/neighbor_2/rewire_030/layered' \
-    $START $END $STEP \
-    'constraint' \
-    "$EVALUATION"
-
+bash "$REPO_ROOT/shell_scripts/run_experiment.sh" \
+	'watts_strogatz/neighbor_2/rewire_030/layered' \
+	$START $END $STEP \
+	'constraint' \
+	"$EVALUATION"
 
 echo ""
 echo "========================================"

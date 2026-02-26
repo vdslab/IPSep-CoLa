@@ -32,11 +32,11 @@ def main():
 
     # Dynamically import the sgd module based on the selected space
     if args.space == "euclidean":
-        sgd_module = importlib.import_module("sgd.full")
+        sgd_module = importlib.import_module("core.sgd.full")
     elif args.space == "hyperbolic":
-        sgd_module = importlib.import_module("sgd.full_hyper")
+        sgd_module = importlib.import_module("core.sgd.full_hyper")
     else:
-        sgd_module = importlib.import_module(f"sgd.full_{args.space}")
+        sgd_module = importlib.import_module(f"core.sgd.full_{args.space}")
     sgd = sgd_module.sgd
 
     os.makedirs(args.dest, exist_ok=True)
