@@ -1,17 +1,16 @@
-import random
 import traceback
 
 import egraph as eg
-import networkx as nx
-from networkx import all_pairs_dijkstra_path_length
-
 from util.graph import nxgraph_to_eggraph
-from util.graph.save_animation import save_animation
 from util.parameter import SGDParameter
 from util.timer import timed, timer
 
-from .projection.circle_constraints import project_circle_constraints
-from .projection.distance_constraints import project_distance_constraints
+# import random
+# import networkx as nx
+# from networkx import all_pairs_dijkstra_path_length
+# from util.graph.save_animation import save_animation
+# from .projection.circle_constraints import project_circle_constraints
+# from .projection.distance_constraints import project_distance_constraints
 
 
 def print_progress_bar(iteration, total, bar_length=40):

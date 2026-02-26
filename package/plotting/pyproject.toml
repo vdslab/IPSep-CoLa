@@ -1,0 +1,21 @@
+[project]
+name = "plotting"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "itochs", email = "halglobe0108@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.10.8",
+    "matplotlib-fontja>=1.1.0",
+    "networkx",
+    "numpy>=2.4.2",
+    "pandas>=3.0.1",
+    "seaborn>=0.13.2",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.16,<0.10.0"]
+build-backend = "uv_build"
